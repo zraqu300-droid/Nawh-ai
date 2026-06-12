@@ -1,18 +1,6 @@
 /**
  * AdminLayout.jsx
  * Premium Admin Dashboard Layout Component for nawh.ai
- *
- * Features:
- * - Collapsible sidebar with animation
- * - RTL/LTR automatic layout mirroring
- * - Dark/Light mode toggle
- * - Language switcher (Arabic/English)
- * - Notification panel
- * - Admin profile dropdown
- * - Mobile responsive with hamburger menu
- *
- * @author nawh.ai
- * @version 1.0.0
  */
 
 import { useState, useEffect } from 'react';
@@ -36,14 +24,12 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Search,
 } from 'lucide-react';
-import { useThemeLanguage } from '../../context/ThemeLanguageContext.jsx';
 
-// ============================================
-// Navigation Items Configuration
-// ============================================
+// استدعاء حقيقي وصحيح من مجلد الـ context المجاور
+import { useThemeLanguage } from '../context/ThemeLanguageContext.jsx';
+
 const getNavItems = (language) => [
   {
     path: '/admin',
@@ -78,33 +64,24 @@ const getNavItems = (language) => [
   },
 ];
 
-// ============================================
-// AdminLayout Component
-// ============================================
 function AdminLayout() {
   const { theme, toggleTheme, language, toggleLanguage, isRTL, isDark } = useThemeLanguage();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // State management
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Navigation items with current language
   const navItems = getNavItems(language);
 
-  // Check if path is active
   const isActive = (path, exact = false) => {
-    if (exact) {
-      return location.pathname === path;
-    }
+    if (exact) return location.pathname === path;
     return location.pathname.startsWith(path);
   };
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!e.target.closest('.dropdown-container')) {
@@ -112,12 +89,10 @@ function AdminLayout() {
         setIsNotificationsOpen(false);
       }
     };
-
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Mock notifications data
   const notifications = [
     {
       id: 1,
@@ -146,9 +121,6 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
-      {/* ============================================ */}
-      {/* Mobile Sidebar Overlay */}
-      {/* ============================================ */}
       {isMobileSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
@@ -156,9 +128,6 @@ function AdminLayout() {
         />
       )}
 
-      {/* ============================================ */}
-      {/* Sidebar */}
-      {/* ============================================ */}
       <aside
         className={`
           fixed top-0 ${isRTL ? 'right-0' : 'left-0'} h-full z-50
@@ -168,9 +137,7 @@ function AdminLayout() {
           ${isMobileSidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
-        {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
-          {/* Logo */}
           <Link to="/admin" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/25 flex-shrink-0">
               <Shield className="w-5 h-5 text-white" />
@@ -182,7 +149,6 @@ function AdminLayout() {
             )}
           </Link>
 
-          {/* Mobile Close Button */}
           <button
             onClick={() => setIsMobileSidebarOpen(false)}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -191,7 +157,6 @@ function AdminLayout() {
           </button>
         </div>
 
-        {/* Navigation Items */}
         <nav className="p-4 space-y-1 overflow-y-auto h-[calc(100vh-180px)]">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -211,7 +176,6 @@ function AdminLayout() {
                   }
                 `}
               >
-                {/* Active Indicator */}
                 {active && (
                   <div
                     className={`
@@ -221,7 +185,6 @@ function AdminLayout() {
                   />
                 )}
 
-                {/* Icon */}
                 <div
                   className={`
                     w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
@@ -235,7 +198,6 @@ function AdminLayout() {
                   <Icon className="w-5 h-5" />
                 </div>
 
-                {/* Label - Only show when sidebar is expanded */}
                 {(isSidebarOpen || isMobileSidebarOpen) && (
                   <span className="font-medium whitespace-nowrap">{item.label}</span>
                 )}
@@ -244,9 +206,7 @@ function AdminLayout() {
           })}
         </nav>
 
-        {/* Sidebar Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
-          {/* Collapse Toggle - Desktop Only */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className={`
@@ -268,7 +228,6 @@ function AdminLayout() {
             )}
           </button>
 
-          {/* Version */}
           {(isSidebarOpen || isMobileSidebarOpen) && (
             <p className="text-xs text-center text-gray-400 mt-3">
               nawh.ai Admin v1.0.0
@@ -277,9 +236,6 @@ function AdminLayout() {
         </div>
       </aside>
 
-      {/* ============================================ */}
-      {/* Main Content Area */}
-      {/* ============================================ */}
       <div
         className={`
           transition-all duration-300
@@ -287,14 +243,9 @@ function AdminLayout() {
           lg:block
         `}
       >
-        {/* ============================================ */}
-        {/* Top Navbar */}
-        {/* ============================================ */}
         <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700">
           <div className="h-full px-4 flex items-center justify-between gap-4">
-            {/* Left Section - Mobile Menu & Search */}
             <div className="flex items-center gap-4 flex-1">
-              {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileSidebarOpen(true)}
                 className="lg:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -302,7 +253,6 @@ function AdminLayout() {
                 <Menu className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
 
-              {/* Search Bar */}
               <div className="relative flex-1 max-w-md hidden sm:block">
                 <Search
                   className={`
@@ -328,9 +278,7 @@ function AdminLayout() {
               </div>
             </div>
 
-            {/* Right Section - Actions */}
             <div className="flex items-center gap-2">
-              {/* Language Toggle */}
               <button
                 onClick={toggleLanguage}
                 className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
@@ -342,7 +290,6 @@ function AdminLayout() {
                 </span>
               </button>
 
-              {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
                 className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -355,7 +302,6 @@ function AdminLayout() {
                 )}
               </button>
 
-              {/* Notifications */}
               <div className="relative dropdown-container">
                 <button
                   onClick={(e) => {
@@ -373,7 +319,6 @@ function AdminLayout() {
                   )}
                 </button>
 
-                {/* Notifications Dropdown */}
                 {isNotificationsOpen && (
                   <div
                     className={`
@@ -441,7 +386,6 @@ function AdminLayout() {
                 )}
               </div>
 
-              {/* Profile Dropdown */}
               <div className="relative dropdown-container">
                 <button
                   onClick={(e) => {
@@ -467,7 +411,6 @@ function AdminLayout() {
                   <ChevronDown className={`w-4 h-4 text-gray-400 hidden sm:block ${isRTL ? 'rotate-90' : ''}`} />
                 </button>
 
-                {/* Profile Dropdown Menu */}
                 {isProfileOpen && (
                   <div
                     className={`
@@ -535,9 +478,6 @@ function AdminLayout() {
           </div>
         </header>
 
-        {/* ============================================ */}
-        {/* Page Content */}
-        {/* ============================================ */}
         <main className="p-6">
           <Outlet />
         </main>
