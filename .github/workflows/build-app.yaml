@@ -15,20 +15,20 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      # 1. سحب الكود الأصلي باستخدام الأداة الافتراضية المستقرة
+      # تم استبدال actions/checkout@v4 بالـ SHA الخاص بها
       - name: 1. Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      # 2. تهيئة بيئة جافا الافتراضية المستقرة
+      # تم استبدال actions/setup-java@v4 بالـ SHA الخاص بها
       - name: 2. Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa8985bcf9a51972685
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. تهيئة بيئة نود الافتراضية المستقرة
+      # تم استبدال actions/setup-node@v4 بالـ SHA الخاص بها
       - name: 3. Setup Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@0a44ba78417256f3445fb93e8584c26cf7424bde
         with:
           node-version: '24'
 
@@ -120,12 +120,15 @@ jobs:
           jarsigner -keystore nawh_release.jks -storepass "nawh_pass_2026" "$AAB_PATH" nawh_alias
           cp "$AAB_PATH" Nawh-Final-Signed.aab
 
-      # 10. رفع وتوفير المخرجات النهائية كـ Artifacts لتخطي حظر الـ Release تماماً
-      - name: 10. Upload Signed Binaries Artifacts
-        uses: actions/upload-artifact@v4
+      # تم استبدال softprops/action-gh-release@v2 بالـ SHA الخاص بها لتخطي الحظر الأمني
+      - name: 10. Publish Release
+        uses: softprops/action-gh-release@c95fe1464397a84a42634cd44ff843a0ec2b12da
         with:
-          name: "Nawh-Production-Package-Build-${{ github.run_number }}"
-          path: |
+          tag_name: v${{ github.run_number }}
+          name: "Nawh Production Build v${{ github.run_number }}"
+          files: |
             Nawh-Final-Signed.apk
             Nawh-Final-Signed.aab
             nawh_release.jks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
