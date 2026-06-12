@@ -15,23 +15,24 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      # تم استبدال actions/checkout@v4 بالـ SHA الخاص بها
+      # 1. سحب الكود من المستودع
       - name: 1. Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@v4
 
-      # تم استبدال actions/setup-java@v4 بالـ SHA الخاص بها
+      # 2. تهيئة بيئة جافا المتوافقة مع أندرويد
       - name: 2. Setup Java 17
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa8985bcf9a51972685
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # تم استبدال actions/setup-node@v4 بالـ SHA الخاص بها
+      # 3. تهيئة بيئة نود
       - name: 3. Setup Node.js 24
-        uses: actions/setup-node@0a44ba78417256f3445fb93e8584c26cf7424bde
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
 
+      # 4. تنظيف المشروع وتثبيت الاعتماديات
       - name: 4. Deep Clean & Install
         run: |
           rm -rf node_modules package-lock.json android ios dist_web
@@ -40,11 +41,13 @@ jobs:
           npm install onesignal-cordova-plugin @capacitor/push-notifications @capacitor/local-notifications --save --legacy-peer-deps
           npm run build
 
+      # 5. تهيئة منصة أندرويد من الصفر
       - name: 5. Initialize Android (Fresh Start)
         run: |
           npx cap add android
           npx cap sync android
 
+      # 6. حقن ملفات الهوية والميزات (Firebase, App Identity, Start.io)
       - name: 6. Inject Firebase, App Identity & Ad Network (Start.io)
         shell: bash
         run: |
@@ -86,6 +89,7 @@ jobs:
           # إضافة معرفات Start.io داخل وسم <application> في المانيفست
           sed -i '/<application[^>]*>/a \        <meta-data android:name="com.startapp.sdk.APPLICATION_ID" android:value="203477356" />' $MANIFEST
 
+      # 7. توليد الأيقونات وصور البداية للتطبيق
       - name: 7. Generate App Icons & Splash
         run: |
           mkdir -p assets
@@ -95,6 +99,7 @@ jobs:
           find . -name "icon-foreground.png" -exec cp {} assets/icon-foreground.png \;
           npx capacitor-assets generate --android
 
+      # 8. بناء ملفات أندرويد الثنائية
       - name: 8. Build Android Binaries
         run: |
           cd android
@@ -103,6 +108,7 @@ jobs:
           ./gradlew assembleRelease
           ./gradlew bundleRelease
 
+      # 9. توقيع ملفات الـ APK والـ AAB
       - name: 9. Sign APK & AAB
         run: |
           # توليد مفتاح توقيع مؤقت خاص بـ Nawh
@@ -120,9 +126,9 @@ jobs:
           jarsigner -keystore nawh_release.jks -storepass "nawh_pass_2026" "$AAB_PATH" nawh_alias
           cp "$AAB_PATH" Nawh-Final-Signed.aab
 
-      # تم استبدال softprops/action-gh-release@v2 بالـ SHA الخاص بها لتخطي الحظر الأمني
+      # 10. نشر النسخة النهائية كـ Release على المستودع
       - name: 10. Publish Release
-        uses: softprops/action-gh-release@c95fe1464397a84a42634cd44ff843a0ec2b12da
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
           name: "Nawh Production Build v${{ github.run_number }}"
