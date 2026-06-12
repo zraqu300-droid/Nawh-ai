@@ -1,11 +1,9 @@
-name: "إدارة nawh-ai"
+name: "إنتاج تطبيق إدارة nawh-ai"
 
 on:
   push:
     branches:
       - main
-    paths:
-      - 'admin/**' # يعمل الأكشن فقط عند تعديل مجلد الأدمن
   workflow_dispatch:
 
 jobs:
@@ -31,7 +29,6 @@ jobs:
         with:
           node-version: '24'
 
-      # --- كاش لتسريع الـ npm ومنع الـ Timeout في السيرفر ---
       - name: 4a. Cache Node Modules
         uses: actions/cache@v4
         with:
@@ -40,42 +37,42 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      # --- تقسيم التثبيت والتنظيف لضمان عدم توقف السيرفر فجأة ---
-      - name: 4b. Deep Clean & Install (Admin Folder)
+      # تم تنظيف وتخفيف التثبيت تماماً من أي مكتبات خارجية وإشعارات
+      - name: 4b. Clean & Install Dependencies
         working-directory: ./admin
         run: |
           rm -rf android ios dist_web
           npm install --legacy-peer-deps
-          npm install onesignal-cordova-plugin @capacitor/push-notifications @capacitor/local-notifications --save --legacy-peer-deps
 
-      # --- خطوة البناء المستقلة للمشروع ---
       - name: 4c. Compile Web Assets
         working-directory: ./admin
         run: |
           npm run build
 
-      # --- تعديل ملف إعدادات كاباسيتور ليحتوي على الهوية الصحيحة للأدمن قبل إنشاء الأندرويد ---
-      - name: 4d. Configure Capacitor Identity
+      # حقن هوية التطبيق (الاسم والحزمة) مباشرة في ملف الإعداد الرئيسي لكاباسيتور
+      - name: 4d. Set Capacitor Config
         working-directory: ./admin
         run: |
-          if [ -f "capacitor.config.json" ]; then
-            sed -i 's/"appId": ".*"/"appId": "com.raqqa.admin"/' capacitor.config.json
-            sed -i 's/"appName": ".*"/"appName": "رقة - الإدارة"/' capacitor.config.json
-          fi
+          cat <<EOF > capacitor.config.json
+          {
+            "appId": "com.raqqa.admin",
+            "appName": "nawh.ai Admin",
+            "webDir": "dist_web",
+            "bundledWebRuntime": false
+          }
+          EOF
 
-      # --- إنشاء بيئة الأندرويد كاملة من الصفر ونسخ الملفات ---
-      - name: 5. Initialize Android (Fresh Start for Admin)
+      # إنشاء الأندرويد بالهوية الجديدة تلقائياً بدون تلاعب بالملفات الداخلية
+      - name: 5. Initialize Android Platform
         working-directory: ./admin
         run: |
           npx cap add android
-          npx cap copy android
           npx cap sync android
 
-      # --- حقن الإعدادات والملفات وتعديل الـ Manifest والـ Gradle بنجاح ---
-      - name: 6. Inject Firebase & App Identity (Admin Config)
+      # حقن ملف الفايربيس فقط في مساره الثابت والمضمون
+      - name: 6. Inject Firebase Config
         shell: bash
         run: |
-          # تأكيد حقن ملف الـ Firebase في المسار الصحيح تماماً
           mkdir -p admin/android/app/
           cat <<EOF > admin/android/app/google-services.json
           {
@@ -98,33 +95,7 @@ jobs:
           }
           EOF
 
-          # تحديد المسارات بدقة بعد التأكد من توليدها من خطوة npx cap
-          STRINGS="admin/android/app/src/main/res/values/strings.xml"
-          APP_GRADLE="admin/android/app/build.gradle"
-          MANIFEST="admin/android/app/src/main/res/AndroidManifest.xml"
-          
-          # تعديل اسم التطبيق ليصبح "رقة - الإدارة" والحزمة لتكون مستقلة
-          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">رقة - الإدارة<\/string>/' $STRINGS
-          sed -i 's/namespace ".*"/namespace "com.raqqa.admin"/' $APP_GRADLE
-          sed -i 's/applicationId ".*"/applicationId "com.raqqa.admin"/' $APP_GRADLE
-          
-          # إضافة الأذونات اللازمة داخل الـ Manifest في المكان الصحيح
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' $MANIFEST
-
-          # إضافة معرف إعلانات Start.io داخل وسم الـ application
-          sed -i '/<application[^>]*>/a \        <meta-data android:name="com.startapp.sdk.APPLICATION_ID" android:value="203477356" />' $MANIFEST
-
-      - name: 7. Generate Admin Icons
-        working-directory: ./admin
-        run: |
-          mkdir -p assets
-          # جلب الأيقونات من المجلد الرئيسي أو مجلد الأدمن
-          find .. -name "icon-only.png" -exec cp {} assets/icon-only.png \;
-          find .. -name "icon-background.png" -exec cp {} assets/icon-background.png \;
-          find .. -name "icon-foreground.png" -exec cp {} assets/icon-foreground.png \;
-          npx capacitor-assets generate --android
-
-      - name: 8. Build Admin Android Binaries
+      - name: 7. Build Android Binaries (APK & AAB)
         working-directory: ./admin/android
         run: |
           chmod +x gradlew
@@ -132,41 +103,36 @@ jobs:
           ./gradlew assembleRelease
           ./gradlew bundleRelease
 
-      - name: 9. Sign Admin APK & AAB
+      - name: 8. Sign Production APK & AAB
         run: |
-          # توليد مفتاح توقيع احترافي ومستقل للأدمن لمنع تداخل بصمات التطبيقات
           keytool -genkey -v -keystore admin_release.jks -alias admin_alias -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass "roqa_pass_2026" -keypass "roqa_pass_2026" \
-            -dname "CN=RoqaAdmin, OU=Dev, O=Roqa, L=Cairo, S=Egypt, C=EG"
+            -storepass "nawh_pass_2026" -keypass "nawh_pass_2026" \
+            -dname "CN=NawhAdmin, OU=Dev, O=Nawh, L=Cairo, S=Egypt, C=EG"
           
-          # توقيع الـ APK وتسميته باسم حصري للأدمن تمامًا لحل تداخل الإنتاج
           APK_PATH=$(find admin/android/app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
           /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks admin_release.jks \
-            --ks-pass pass:"roqa_pass_2026" --out Roqa-EXCLUSIVE-ADMIN.apk "$APK_PATH"
+            --ks-pass pass:"nawh_pass_2026" --out Nawh-Admin.apk "$APK_PATH"
           
-          # توقيع الـ AAB وتسميته باسم حصري
           AAB_PATH=$(find admin/android/app/build/outputs/bundle/release/ -name "*.aab" | head -n 1)
-          jarsigner -keystore admin_release.jks -storepass "roqa_pass_2026" "$AAB_PATH" admin_alias
-          cp "$AAB_PATH" Roqa-EXCLUSIVE-ADMIN.aab
+          jarsigner -keystore admin_release.jks -storepass "nawh_pass_2026" "$AAB_PATH" admin_alias
+          cp "$AAB_PATH" Nawh-Admin.aab
 
-      # --- الرفع المباشر كملف مستقل (Artifact) للأدمن ---
-      - name: 10. Upload Admin Artifacts (Direct Download)
+      - name: 9. Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Roqa-Admin-Only-Package
+          name: Nawh-Admin-Build
           path: |
-            Roqa-EXCLUSIVE-ADMIN.apk
-            Roqa-EXCLUSIVE-ADMIN.aab
+            Nawh-Admin.apk
+            Nawh-Admin.aab
 
-      # --- نشر صفحة ريليس حصرية للأدمن بعيداً عن ريليس الواجهة الحالي ---
-      - name: 11. Publish Admin Release
+      - name: 10. Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: admin-only-v${{ github.run_number }}
-          name: "Roqa EXCLUSIVE ADMIN PANEL Build v${{ github.run_number }}"
+          tag_name: admin-v${{ github.run_number }}
+          name: "Nawh.ai Admin Panel v${{ github.run_number }}"
           files: |
-            Roqa-EXCLUSIVE-ADMIN.apk
-            Roqa-EXCLUSIVE-ADMIN.aab
+            Nawh-Admin.apk
+            Nawh-Admin.aab
             admin_release.jks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
