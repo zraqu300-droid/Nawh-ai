@@ -1,34 +1,36 @@
 import React from 'react';
-// استدعاء الـ HashRouter المخصص للهواتف والـ التوجيه
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
-import AdminLayout from './bage/AdminLayout';
-
-// مكون بسيط ومؤقت لصفحة الـ Dashboard الرئيسية داخل الأدمن لملء الفراغ
-function DashboardHome() {
-  return (
-    <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm text-center">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-        مرحباً بك في لوحة تحكم nawh.ai
-      </h1>
-      <p className="text-gray-500 dark:text-gray-400">
-        الآن النظام يعمل ومستقر 100% على الأندرويد.
-      </p>
-    </div>
-  );
-}
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* جعل الـ AdminLayout هو المسار الرئيسي وتحته الصفحات الداخلية */}
-        <Route path="/" element={<AdminLayout />}>
-          {/* الصفحة الافتراضية التي تظهر داخل الـ Outlet فوراً */}
-          <index element={<DashboardHome />} />
-          <Route index element={<DashboardHome />} />
-        </Route>
-      </Routes>
-    </Router>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      backgroundColor: '#1e1e2f',
+      color: '#ffffff',
+      fontFamily: 'sans-serif',
+      padding: '20px',
+      textAlign: 'center'
+    }}>
+      <h1 style={{ fontSize: '2.5rem', marginBottom: '20px', color: '#4edf85' }}>
+        🚀 تطبيق nawh.ai يعمل بنجاح!
+      </h1>
+      <p style={{ fontSize: '1.2rem', color: '#a2a2c2', maxWidth: '500px' }}>
+        إذا ظهرت لك هذه الشاشة الملونة الآن، فهذا يعني أن الـ APK سليم تماماً وأن المشكلة السابقة كانت بسبب مسارات الـ Router الافتراضية للهاتف.
+      </p>
+      <div style={{
+        marginTop: '30px',
+        padding: '10px 20px',
+        backgroundColor: '#2a2a40',
+        borderRadius: '10px',
+        fontSize: '0.9rem',
+        border: '1px solid #444'
+      }}>
+        بنية الـ APK مستقرة 100%
+      </div>
+    </div>
   );
 }
 
