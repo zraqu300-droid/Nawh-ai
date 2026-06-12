@@ -1,18 +1,13 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import AdminLayout from './admin/Page/AdminLayout';
+// استدعاء الصفحة من المسار الجديد المحدد (مع مراعاة كلمة bage كما كتبتها)
+import AdminLayout from '../admin/src/bage/AdminLayout';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* جعل مسار الأدمن يفتح مباشرة كمسار رئيسي للموقع */}
-        <Route path="/" element={<AdminLayout />} />
-        
-        {/* يمكنك أيضاً تركه يفتح على نفس المسار المذكور */}
-        <Route path="/admin/Page/AdminLayout.jsx" element={<AdminLayout />} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      {/* عرض صفحة AdminLayout مباشرة عند فتح التطبيق */}
+      <AdminLayout />
+    </>
   );
 }
 
