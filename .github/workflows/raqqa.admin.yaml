@@ -54,16 +54,29 @@ jobs:
         run: |
           npm run build
 
+      # --- تعديل ملف إعدادات كاباسيتور ليحتوي على الهوية الصحيحة للأدمن قبل إنشاء الأندرويد ---
+      - name: 4d. Configure Capacitor Identity
+        working-directory: ./admin
+        run: |
+          if [ -f "capacitor.config.json" ]; then
+            sed -i 's/"appId": ".*"/"appId": "com.raqqa.admin"/' capacitor.config.json
+            sed -i 's/"appName": ".*"/"appName": "رقة - الإدارة"/' capacitor.config.json
+          fi
+
+      # --- إنشاء بيئة الأندرويد كاملة من الصفر ونسخ الملفات ---
       - name: 5. Initialize Android (Fresh Start for Admin)
         working-directory: ./admin
         run: |
           npx cap add android
+          npx cap copy android
           npx cap sync android
 
+      # --- حقن الإعدادات والملفات وتعديل الـ Manifest والـ Gradle بنجاح ---
       - name: 6. Inject Firebase & App Identity (Admin Config)
         shell: bash
         run: |
-          # حقن ملف جوجل الخاص بالأدمن (باستخدام معرف حزمة الأدمن)
+          # تأكيد حقن ملف الـ Firebase في المسار الصحيح تماماً
+          mkdir -p admin/android/app/
           cat <<EOF > admin/android/app/google-services.json
           {
             "project_info": {
@@ -85,6 +98,7 @@ jobs:
           }
           EOF
 
+          # تحديد المسارات بدقة بعد التأكد من توليدها من خطوة npx cap
           STRINGS="admin/android/app/src/main/res/values/strings.xml"
           APP_GRADLE="admin/android/app/build.gradle"
           MANIFEST="admin/android/app/src/main/res/AndroidManifest.xml"
@@ -94,10 +108,10 @@ jobs:
           sed -i 's/namespace ".*"/namespace "com.raqqa.admin"/' $APP_GRADLE
           sed -i 's/applicationId ".*"/applicationId "com.raqqa.admin"/' $APP_GRADLE
           
-          # إضافة الأذونات اللازمة
+          # إضافة الأذونات اللازمة داخل الـ Manifest في المكان الصحيح
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' $MANIFEST
 
-          # إضافة معرف Start.io
+          # إضافة معرف إعلانات Start.io داخل وسم الـ application
           sed -i '/<application[^>]*>/a \        <meta-data android:name="com.startapp.sdk.APPLICATION_ID" android:value="203477356" />' $MANIFEST
 
       - name: 7. Generate Admin Icons
@@ -120,7 +134,7 @@ jobs:
 
       - name: 9. Sign Admin APK & AAB
         run: |
-          # توليد مفتاح توقيع
+          # توليد مفتاح توقيع احترافي ومستقل للأدمن لمنع تداخل بصمات التطبيقات
           keytool -genkey -v -keystore admin_release.jks -alias admin_alias -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass "roqa_pass_2026" -keypass "roqa_pass_2026" \
             -dname "CN=RoqaAdmin, OU=Dev, O=Roqa, L=Cairo, S=Egypt, C=EG"
@@ -155,4 +169,4 @@ jobs:
             Roqa-EXCLUSIVE-ADMIN.aab
             admin_release.jks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
