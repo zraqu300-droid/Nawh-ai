@@ -31,17 +31,32 @@ jobs:
         with:
           node-version: '24'
 
-      - name: 4. Deep Clean & Install (Admin Folder)
+      # --- كاش لتسريع الـ npm ومنع الـ Timeout في السيرفر ---
+      - name: 4a. Cache Node Modules
+        uses: actions/cache@v4
+        with:
+          path: admin/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('admin/package-lock.json', 'admin/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # --- تقسيم التثبيت والتنظيف لضمان عدم توقف السيرفر فجأة ---
+      - name: 4b. Deep Clean & Install (Admin Folder)
+        working-directory: ./admin
         run: |
-          cd admin
-          rm -rf node_modules package-lock.json android ios dist_web
+          rm -rf android ios dist_web
           npm install --legacy-peer-deps
           npm install onesignal-cordova-plugin @capacitor/push-notifications @capacitor/local-notifications --save --legacy-peer-deps
+
+      # --- خطوة البناء المستقلة للمشروع ---
+      - name: 4c. Compile Web Assets
+        working-directory: ./admin
+        run: |
           npm run build
 
       - name: 5. Initialize Android (Fresh Start for Admin)
+        working-directory: ./admin
         run: |
-          cd admin
           npx cap add android
           npx cap sync android
 
@@ -86,8 +101,8 @@ jobs:
           sed -i '/<application[^>]*>/a \        <meta-data android:name="com.startapp.sdk.APPLICATION_ID" android:value="203477356" />' $MANIFEST
 
       - name: 7. Generate Admin Icons
+        working-directory: ./admin
         run: |
-          cd admin
           mkdir -p assets
           # جلب الأيقونات من المجلد الرئيسي أو مجلد الأدمن
           find .. -name "icon-only.png" -exec cp {} assets/icon-only.png \;
@@ -96,8 +111,8 @@ jobs:
           npx capacitor-assets generate --android
 
       - name: 8. Build Admin Android Binaries
+        working-directory: ./admin/android
         run: |
-          cd admin/android
           chmod +x gradlew
           ./gradlew clean
           ./gradlew assembleRelease
