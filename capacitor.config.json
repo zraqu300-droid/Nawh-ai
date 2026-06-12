@@ -1,6 +1,6 @@
 {
-  "appId": "com.raqqa.app",
-  "appName": "رقة",
+  "appId": "ai.nawh.app",
+  "appName": "نوح",
   "webDir": "dist_web",
   "server": {
     "androidScheme": "https",
