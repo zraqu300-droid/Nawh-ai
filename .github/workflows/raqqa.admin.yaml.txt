@@ -1,4 +1,4 @@
-name: "Roqa Admin Production Build"
+name: "إدارة nawh-ai"
 
 on:
   push:
@@ -72,7 +72,7 @@ jobs:
 
           STRINGS="admin/android/app/src/main/res/values/strings.xml"
           APP_GRADLE="admin/android/app/build.gradle"
-          MANIFEST="admin/android/app/src/main/AndroidManifest.xml"
+          MANIFEST="admin/android/app/src/main/res/AndroidManifest.xml"
           
           # تعديل اسم التطبيق ليصبح "رقة - الإدارة" والحزمة لتكون مستقلة
           sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">رقة - الإدارة<\/string>/' $STRINGS
