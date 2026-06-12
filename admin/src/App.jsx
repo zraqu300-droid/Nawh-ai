@@ -1,6 +1,6 @@
 import React from 'react';
-// استدعاء الصفحة من المسار الجديد المحدد (مع مراعاة كلمة bage كما كتبتها)
-import AdminLayout from '../admin/src/bage/AdminLayout';
+// التصحيح: الاستدعاء يبدأ من المجلد الحالي المتواجد فيه App.jsx مباشرة
+import AdminLayout from './bage/AdminLayout';
 
 function App() {
   return (
