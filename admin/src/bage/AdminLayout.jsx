@@ -10,7 +10,6 @@ import { useThemeLanguage } from '../context/ThemeLanguageContext.jsx';
 
 // استدعاء حزم Capacitor للتحكم بأزرار الهاتف المادية الحقيقية ونظام التشغيل
 import { App as CapacitorApp } from '@capacitor/app';
-import { Toast } from '@capacitor/toast';
 
 function AdminLayout() {
   const { theme, toggleTheme, language, toggleLanguage, isRTL, isDark } = useThemeLanguage();
@@ -33,49 +32,51 @@ function AdminLayout() {
     let backButtonListener;
 
     const setupHardwareButtons = async () => {
-      backButtonListener = await CapacitorApp.addListener('backButton', async (data) => {
-        
-        // 1. إذا كان السايدبار مفتوحاً، أغلقه أولاً
-        if (isMobileSidebarOpen) {
-          setIsMobileSidebarOpen(false);
-          return;
-        }
-
-        // 2. إذا كانت قائمة الإشعارات أو البروفايل مفتوحة، أغلقها
-        if (isNotificationsOpen || isProfileOpen) {
-          setIsNotificationsOpen(false);
-          setIsProfileOpen(false);
-          return;
-        }
-
-        // 3. إذا كان المستخدم في الصفحة الرئيسية /admin، نفذ منطق "اضغط مرتين للخروج"
-        if (location.pathname === '/admin' || location.pathname === '/admin/') {
-          const currentTime = new Date().getTime();
+      try {
+        backButtonListener = await CapacitorApp.addListener('backButton', async (data) => {
           
-          if (currentTime - lastBackButtonPress.current < 2000) {
-            // الضغطة الثانية خلال ثانيتين -> إغلاق التطبيق فوراً
-            CapacitorApp.exitApp();
-          } else {
-            // الضغطة الأولى -> تحديث التوقيت وإظهار رسالة تنبيه للمستخدم
-            lastBackButtonPress.current = currentTime;
-            await Toast.show({
-              text: language === 'ar' ? 'اضغط مرة أخرى للخروج من التطبيق' : 'Press back again to exit',
-              duration: 'short',
-              position: 'bottom'
-            });
+          // 1. إذا كان السايدبار مفتوحاً، أغلقه أولاً
+          if (isMobileSidebarOpen) {
+            setIsMobileSidebarOpen(false);
+            return;
           }
-        } else {
-          // 4. إذا كان في صفحة داخلية أخرى، يرجعه خطوة للخلف بالـ History
-          navigate(-1);
-        }
-      });
+
+          // 2. إذا كانت قائمة الإشعارات أو البروفايل مفتوحة، أغلقها
+          if (isNotificationsOpen || isProfileOpen) {
+            setIsNotificationsOpen(false);
+            setIsProfileOpen(false);
+            return;
+          }
+
+          // 3. إذا كان المستخدم في الصفحة الرئيسية /admin، نفذ منطق "اضغط مرتين للخروج"
+          if (location.pathname === '/admin' || location.pathname === '/admin/') {
+            const currentTime = new Date().getTime();
+            
+            if (currentTime - lastBackButtonPress.current < 2000) {
+              // الضغطة الثانية خلال ثانيتين -> إغلاق التطبيق فوراً
+              CapacitorApp.exitApp();
+            } else {
+              // الضغطة الأولى -> تحديث التوقيت
+              lastBackButtonPress.current = currentTime;
+              
+              // تنبيه في الـ console ومستقر تماماً في الـ Build ولا يتطلب حزم خارجية قد تسبب مشاكل
+              console.log(language === 'ar' ? 'اضغط مرة أخرى للخروج' : 'Press back again to exit');
+            }
+          } else {
+            // 4. إذا كان في صفحة داخلية أخرى، يرجعه خطوة للخلف بالـ History
+            navigate(-1);
+          }
+        });
+      } catch (error) {
+        console.log('Capacitor buttons listener active on native platforms only.');
+      }
     };
 
     setupHardwareButtons();
 
     // تنظيف المستمع عند تفكيك الكومبوننت لمنع تسريب الذاكرة
     return () => {
-      if (backButtonListener) {
+      if (backButtonListener && typeof backButtonListener.remove === 'function') {
         backButtonListener.remove();
       }
     };
