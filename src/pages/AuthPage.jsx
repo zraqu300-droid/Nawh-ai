@@ -19,6 +19,8 @@ import { Mail, Lock, User, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/ThemeLanguageContext.jsx';
 import Button from '../components/Button.jsx';
 import Input from '../components/Input.jsx';
+// استيراد عميل سابابيز (تأكد من صحة مسار الملف طبقاً لمشروعك)
+import { supabase } from '../supabaseClient.js'; 
 
 /**
  * AuthPage Component
@@ -64,19 +66,59 @@ function AuthPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      if (isLogin) {
+        // 1. تسجيل الدخول بالبريد والكلمة السرية
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+      } else {
+        // 2. إنشاء حساب جديد وحفظ الاسم الكامل داخل الـ user_metadata في Supabase Auth
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
+        if (error) throw error;
+        
+        // تنبيه بسيط للمستخدم في حال تفعيل تأكيد البريد الإلكتروني من لوحة تحكم Supabase
+        if (language === 'ar') {
+          alert('تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني إذا تطلب الأمر.');
+        } else {
+          alert('Account created successfully! Please check your email if required.');
+        }
+      }
 
-    setIsLoading(false);
-    navigate('/dashboard');
+      // الانتقال للوحة التحكم بعد النجاح
+      navigate('/dashboard');
+    } catch (error) {
+      alert(error.message || error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   /**
    * Handle social login click
    */
-  const handleSocialLogin = (provider) => {
-    console.log(`Social login with ${provider}`);
-    // In production, implement actual social auth
+  const handleSocialLogin = async (provider) => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider, // 'google' أو 'apple' أو 'facebook'
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`, // الرابط الذي سيعود إليه المستخدم بعد نجاح تسجيل الدخول
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      alert(error.message || error);
+    }
   };
 
   return (
