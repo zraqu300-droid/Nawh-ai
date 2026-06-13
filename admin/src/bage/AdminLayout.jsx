@@ -8,6 +8,10 @@ import {
 // استدعاء الـ Context لإدارة المظهر واللغة من المجلد الصحيح
 import { useThemeLanguage } from '../context/ThemeLanguageContext.jsx';
 
+// استدعاء حزم Capacitor للتحكم بأزرار الهاتف المادية الحقيقية ونظام التشغيل
+import { App as CapacitorApp } from '@capacitor/app';
+import { Toast } from '@capacitor/toast';
+
 function AdminLayout() {
   const { theme, toggleTheme, language, toggleLanguage, isRTL, isDark } = useThemeLanguage();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -19,7 +23,65 @@ function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // إغلاق القائمة الجانبية للموبايل عند الضغط خارجها
+  // متغير مرجعي لتتبع توقيت الضغطة الأخيرة لزر الخروج (منع الخروج الفجائي)
+  const lastBackButtonPress = useRef(0);
+
+  // ----------------------------------------------------------------------
+  // 🎮 محرك الاستماع لأزرار الهاتف الذكي (Hardware Back Button Listener)
+  // ----------------------------------------------------------------------
+  useEffect(() => {
+    let backButtonListener;
+
+    const setupHardwareButtons = async () => {
+      backButtonListener = await CapacitorApp.addListener('backButton', async (data) => {
+        
+        // 1. إذا كان السايدبار مفتوحاً، أغلقه أولاً
+        if (isMobileSidebarOpen) {
+          setIsMobileSidebarOpen(false);
+          return;
+        }
+
+        // 2. إذا كانت قائمة الإشعارات أو البروفايل مفتوحة، أغلقها
+        if (isNotificationsOpen || isProfileOpen) {
+          setIsNotificationsOpen(false);
+          setIsProfileOpen(false);
+          return;
+        }
+
+        // 3. إذا كان المستخدم في الصفحة الرئيسية /admin، نفذ منطق "اضغط مرتين للخروج"
+        if (location.pathname === '/admin' || location.pathname === '/admin/') {
+          const currentTime = new Date().getTime();
+          
+          if (currentTime - lastBackButtonPress.current < 2000) {
+            // الضغطة الثانية خلال ثانيتين -> إغلاق التطبيق فوراً
+            CapacitorApp.exitApp();
+          } else {
+            // الضغطة الأولى -> تحديث التوقيت وإظهار رسالة تنبيه للمستخدم
+            lastBackButtonPress.current = currentTime;
+            await Toast.show({
+              text: language === 'ar' ? 'اضغط مرة أخرى للخروج من التطبيق' : 'Press back again to exit',
+              duration: 'short',
+              position: 'bottom'
+            });
+          }
+        } else {
+          // 4. إذا كان في صفحة داخلية أخرى، يرجعه خطوة للخلف بالـ History
+          navigate(-1);
+        }
+      });
+    };
+
+    setupHardwareButtons();
+
+    // تنظيف المستمع عند تفكيك الكومبوننت لمنع تسريب الذاكرة
+    return () => {
+      if (backButtonListener) {
+        backButtonListener.remove();
+      }
+    };
+  }, [location.pathname, isMobileSidebarOpen, isNotificationsOpen, isProfileOpen, language, navigate]);
+
+  // إغلاق القائمة الجانبية للموبايل عند الضغط خارجها بالماوس/اللمس
   useEffect(() => {
     function handleClickOutside(event) {
       if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
@@ -95,7 +157,6 @@ function AdminLayout() {
         <nav className="p-4 space-y-1 overflow-y-auto h-[calc(100vh-4rem)]">
           {navItems.map((item) => {
             const Icon = item.icon;
-            // التحقق من الصفحة النشطة حالياً لتلوين الزر
             const isActive = location.pathname === item.path || (item.path === '/admin' && location.pathname === '/admin/');
             
             return (
@@ -132,12 +193,12 @@ function AdminLayout() {
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* حقل البحث الوهمي (مظهر تجاري جذاب) */}
+          {/* حقل البحث (مظهر تجاري جذاب) */}
           <div className="hidden md:flex items-center gap-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-1.5 w-64 focus-within:border-blue-500 transition-colors">
             <Search className="w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder={language === 'ar' ? 'بحث سرييع...' : 'Quick search...'}
+              placeholder={language === 'ar' ? 'بحث سريع...' : 'Quick search...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent text-xs outline-none w-full border-none focus:ring-0 p-0"
@@ -220,9 +281,8 @@ function AdminLayout() {
           </div>
         </header>
 
-        {/* 4️⃣ المحقن السحري المخصص لعرض الصفحات الداخلية (المحرك الرئيسي) */}
+        {/* 4️⃣ محقن عرض الصفحات الداخلية */}
         <main className="flex-1 p-4 lg:p-6 max-w-[1600px] w-full mx-auto">
-          {/* هنا سيتم عرض شاشة الـ DashboardHome تلقائياً وبشكل مستقر */}
           <Outlet />
         </main>
 
