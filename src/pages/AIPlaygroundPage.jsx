@@ -8,11 +8,11 @@
  * - Suggestion chips
  * - RTL/LTR aware layouts
  * - Message history
- * - Simulated AI responses & Direct Live Coze Agent Integration
+ * - Direct Live Coze Agent API Integration (No redirection)
  * - Dynamic data fetching (Images, Articles, Videos) from apiService
  *
  * @author nawh.ai
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import { useState, useRef, useEffect } from 'react';
@@ -24,7 +24,6 @@ import {
   Sparkles,
   Trash2,
   Copy,
-  RefreshCw,
   Zap,
   PenTool,
   Code,
@@ -55,22 +54,6 @@ const SUGGESTIONS = {
     { icon: Code, text: 'Create React component code' },
     { icon: MessageSquare, text: 'Help me write a message' },
     { icon: Zap, text: 'Suggest project ideas' },
-  ],
-};
-
-// AI response templates
-const AI_RESPONSES = {
-  ar: [
-    'بالتأكيد! سأساعدك في ذلك. اسمح لي بتحليل طلبك وتقديم أفضل الحلول الممكنة.',
-    'هذا سؤال رائع! بناءً على ما تعلمته، أقترح عليك عدة خيارات ممكنة:',
-    'سعيد بمساعدتك! إليك ما يمكنني تقديمه:',
-    'شكراً لسؤالك! دعني أفكر في أفضل إجابة ممكنة...',
-  ],
-  en: [
-    "Absolutely! I'll help you with that. Let me analyze your request and provide the best possible solutions.",
-    "That's a great question! Based on what I've learned, I suggest several possible options:",
-    "Happy to help! Here's what I can offer:",
-    "Thanks for asking! Let me think about the best possible answer...",
   ],
 };
 
@@ -119,13 +102,16 @@ function MessageBubble({ message, isUser, isTyping }) {
             <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
         ) : (
-          <p className="leading-relaxed">{message}</p>
+          <p className="leading-relaxed whitespace-pre-wrap">{message}</p>
         )}
 
         {/* Action buttons for AI messages */}
         {!isUser && !isTyping && (
           <div className={`absolute ${isRTL ? 'left-0 -translate-x-full' : 'right-0 translate-x-full'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 px-2`}>
-            <button className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+            <button 
+              onClick={() => navigator.clipboard.writeText(message)}
+              className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
               <Copy className="w-4 h-4 text-gray-400" />
             </button>
           </div>
@@ -153,7 +139,10 @@ function AIPlaygroundPage() {
   const inputRef = useRef(null);
 
   const suggestions = SUGGESTIONS[language];
-  const cozeChatUrl = 'https://www.coze.com/store/agent/7651037957994135557?bot_id=true';
+
+  // بيانات الاتصال بـ Coze API الافتراضية - يفضل استبدال الـ Token والـ Bot ID ببياناتك الخاصة لاحقاً
+  const COZE_API_KEY = 'YOUR_COZE_PERSONAL_ACCESS_TOKEN'; 
+  const COZE_BOT_ID = '7651037957994135557';
 
   // استدعاء وجلب البيانات من الـ apiService عند تشغيل الصفحة
   useEffect(() => {
@@ -161,7 +150,6 @@ function AIPlaygroundPage() {
       try {
         setIsLoadingDb(true);
         
-        // استدعاء كود الخدمات بالتوازي (تأكد من مطابقة أسماء الدوال داخل ملف apiService.js الخاص بك)
         const [articlesRes, imagesRes, videosRes] = await Promise.all([
           apiService.getArticles ? apiService.getArticles() : Promise.resolve([]),
           apiService.getImages ? apiService.getImages() : Promise.resolve([]),
@@ -183,17 +171,6 @@ function AIPlaygroundPage() {
     fetchDatabaseContent();
   }, []);
 
-  // دالة فتح الشات المباشر المدمج عبر استخدام CapacitorHttp للاتصال الخارجي بالرابط والاحتياط بالمتصفح التقليدي
-  const handleOpenLiveChat = async () => {
-    try {
-      // الاتصال الخارجي أو طلب الرابط مستهدفين التوافق الكامل مع الـ Native Engines
-      await CapacitorHttp.get({ url: cozeChatUrl });
-      window.open(cozeChatUrl, '_blank');
-    } catch (error) {
-      window.open(cozeChatUrl, '_blank');
-    }
-  };
-
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -205,34 +182,78 @@ function AIPlaygroundPage() {
   }, []);
 
   /**
-   * Send message handler
+   * دالة إرسال الرسالة وجلب الرد الحي المباشر داخل نفس واجهتك الخاصة
    */
   const handleSend = async (text = inputValue) => {
     if (!text.trim()) return;
 
-    // Add user message
+    // 1. إضافة رسالة المستخدم إلى الواجهة
     const userMessage = { id: Date.now(), text, isUser: true };
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
     setSelectedSuggestion(null);
 
-    // Simulate AI thinking
+    // 2. تفعيل أنيميشن الكتابة (التفكير)
     setIsTyping(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1000));
+    try {
+      // 3. الاتصال المباشر بـ Coze API باستخدام CapacitorHttp لضمان عملها على الأندرويد والويب
+      const response = await CapacitorHttp.post({
+        url: 'https://api.coze.com/v1/conversation/chat',
+        headers: {
+          'Authorization': `Bearer ${COZE_API_KEY}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        },
+        data: {
+          bot_id: COZE_BOT_ID,
+          user_id: 'nawh_user_' + Date.now(), // معرف فريد مؤقت للمستخدم الحالي
+          additional_messages: [
+            {
+              role: 'user',
+              content: text,
+              content_type: 'text'
+            }
+          ],
+          stream: false
+        }
+      });
 
-    // Generate AI response
-    const aiResponses = AI_RESPONSES[language];
-    const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+      let aiReplyText = '';
 
-    const aiMessage = {
-      id: Date.now() + 1,
-      text: randomResponse,
-      isUser: false,
-    };
+      if (response.status === 200 && response.data) {
+        // فحص بنية رد Coze المعتادة واستخراج نص الإجابة
+        const messagesList = response.data.messages || [];
+        const answerMessage = messagesList.find(m => m.type === 'answer');
+        aiReplyText = answerMessage ? answerMessage.content : '';
+      }
 
-    setIsTyping(false);
-    setMessages((prev) => [...prev, aiMessage]);
+      // في حال لم نجد رداً حياً أو لم يتم تهيئة الـ Token بعد، نضع رداً احتياطياً ذكياً داخل نفس الواجهة
+      if (!aiReplyText) {
+        aiReplyText = language === 'ar' 
+          ? 'تم استقبال رسالتك في الواجهة بنجاح! يرجى التأكد من ربط مفتاح الـ API الخاص بـ Coze لتبدأ المحادثة الحية بالكامل هنا.'
+          : 'Message received in your interface successfully! Please configure your Coze API token to start live interaction here.';
+      }
+
+      // 4. إضافة رد الذكاء الاصطناعي داخل واجهتك
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now() + 1, text: aiReplyText, isUser: false }
+      ]);
+
+    } catch (error) {
+      console.error('Coze API Error:', error);
+      setMessages((prev) => [
+        ...prev,
+        { 
+          id: Date.now() + 1, 
+          text: language === 'ar' ? 'عذراً، حدث خطأ أثناء الاتصال بالخادم حياً.' : 'Sorry, an error occurred while connecting to the live server.', 
+          isUser: false 
+        }
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   /**
@@ -279,22 +300,12 @@ function AIPlaygroundPage() {
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
                 {language === 'ar'
-                  ? 'تفاعل مع أحدث تقنيات الذكاء الاصطناعي'
-                  : 'Interact with the latest AI technologies'}
+                  ? 'تفاعل حياً مع نظامك الذكي المدمج بالكامل'
+                  : 'Interact live with your fully integrated smart engine'}
               </p>
             </div>
 
             <div className="flex gap-2">
-              {/* زر إضافي فخم يفتح شات Coze الحي مباشرة */}
-              <Button
-                variant="gradient"
-                size="sm"
-                icon={<MessageSquare className="w-4 h-4" />}
-                onClick={handleOpenLiveChat}
-              >
-                {language === 'ar' ? 'المحادثة الحية المباشرة 🚀' : 'Live Chat Assistant 🚀'}
-              </Button>
-
               {messages.length > 0 && (
                 <Button
                   variant="ghost"
@@ -323,8 +334,8 @@ function AIPlaygroundPage() {
                   </h2>
                   <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
                     {language === 'ar'
-                      ? 'اختر من الاقتراحات أدناه أو اكتب سؤالك الخاص'
-                      : 'Choose from suggestions below or type your own question'}
+                      ? 'اختر من الاقتراحات أدناه أو اكتب سؤالك الخاص وسأجيبك هنا مباشرة'
+                      : 'Choose from suggestions below or type your own question to chat live here'}
                   </p>
 
                   {/* Suggestions Grid */}
@@ -382,7 +393,7 @@ function AIPlaygroundPage() {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder={language === 'ar' ? 'اكتب رسالتك هنا...' : 'Type your message...'}
+                    placeholder={language === 'ar' ? 'اكتب رسالتك هنا ليجيبك الذكاء الاصطناعي...' : 'Type your message here...'}
                     rows={1}
                     className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-400 text-gray-900 dark:text-white placeholder:text-gray-400 resize-none transition-all"
                     style={{ maxHeight: '120px' }}
@@ -416,7 +427,7 @@ function AIPlaygroundPage() {
 
             {isLoadingDb ? (
               <div className="text-sm text-center py-6 text-gray-500 animate-pulse">
-                {language === 'ar' ? 'جاري جاري تحميل البيانات الحية...' : 'Fetching live operational data...'}
+                {language === 'ar' ? 'جاري تحميل البيانات الحية...' : 'Fetching live operational data...'}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -468,8 +479,8 @@ function AIPlaygroundPage() {
           {/* Disclaimer */}
           <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-4">
             {language === 'ar'
-              ? 'جميع الردود تُولد بواسطة الذكاء الاصطناعي وقد تحتاج للمراجعة'
-              : 'All responses are AI-generated and may require review'}
+              ? 'جميع الردود حية وتُولد بواسطة الذكاء الاصطناعي مباشرة داخل التطبيق'
+              : 'All responses are live and AI-generated directly inside the application'}
           </p>
         </main>
       </div>
