@@ -16,7 +16,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { Browser } from '@capacitor/browser';
+import { CapacitorHttp } from '@capacitor/core';
 import {
   Send,
   Bot,
@@ -183,14 +183,12 @@ function AIPlaygroundPage() {
     fetchDatabaseContent();
   }, []);
 
-  // دالة فتح الشات المباشر المدمج من كوز متوافقة مع الأندرويد والويب
+  // دالة فتح الشات المباشر المدمج عبر استخدام CapacitorHttp للاتصال الخارجي بالرابط والاحتياط بالمتصفح التقليدي
   const handleOpenLiveChat = async () => {
     try {
-      await Browser.open({ 
-        url: cozeChatUrl,
-        windowName: '_blank',
-        presentationStyle: 'fullscreen'
-      });
+      // الاتصال الخارجي أو طلب الرابط مستهدفين التوافق الكامل مع الـ Native Engines
+      await CapacitorHttp.get({ url: cozeChatUrl });
+      window.open(cozeChatUrl, '_blank');
     } catch (error) {
       window.open(cozeChatUrl, '_blank');
     }
