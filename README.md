@@ -2,6 +2,15 @@
 
 A premium, production-ready React starter template with bilingual support (Arabic RTL / English LTR), dark mode, and modern UI components. Perfect for selling on GitHub, ThemeForest, or CodeCanyon.
 
+## 🌐 Quick Access & Cloud Consoles
+To make the live management and infrastructure review seamless, use the direct links below to access the integrated cloud instances and the live preview:
+
+[![Live Demo](https://img.shields.io/badge/Demo-Open_Live_Platform-FF69B4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://venerable-frangipane-5e492b.netlify.app)
+[![Open Supabase Console](https://img.shields.io/badge/Supabase-Open_Database_Console-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/dashboard)
+[![Open Netlify Dashboard](https://img.shields.io/badge/Netlify-Open_Deployment_Live-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://app.netlify.com)
+
+---
+
 ## Features
 
 ### Core Features
