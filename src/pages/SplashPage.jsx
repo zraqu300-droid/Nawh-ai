@@ -5,16 +5,20 @@
  * Features:
  * - Animated logo with gradient
  * - Fade in/out animations
- * - Auto-redirect to onboarding
+ * - Auto-session check via Supabase & Capacitor Preferences
+ * - Auto-redirect to dashboard if logged in, or onboarding if guest
  *
  * @author nawh.ai
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/ThemeLanguageContext.jsx';
+
+// 1️⃣ استيراد كائن سوبابيز المربوط بالتخزين الدائم للموبايل
+import { supabase } from '../services/supabaseClient'; // تأكد من مطابقة المسار لملف السوبابيز الخاص بك
 
 /**
  * SplashPage Component
@@ -26,13 +30,39 @@ function SplashPage() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Fade in
+    // Fade in للواجهة والتصميم
     const fadeInTimer = setTimeout(() => setIsVisible(true), 100);
 
-    // Navigate to onboarding after splash
+    // 2️⃣ دالة فحص الجلسة والتوجيه الذكي للمستخدم
+    const checkUserSessionAndNavigate = async () => {
+      try {
+        // جلب الجلسة المخزنة بداخل Capacitor Preferences تلقائياً
+        const { data: { session } } = await supabase.auth.getSession();
+
+        // تفعيل أنيميشن الخروج بسلاسة
+        setIsVisible(false);
+
+        setTimeout(() => {
+          if (session && session.user) {
+            // إذا كان الحساب مسجلاً وموجوداً في الذاكرة، توجه للرئيسية فوراً دون طلب تسجيل دخول
+            navigate('/dashboard');
+          } else {
+            // إذا كان مستخدماً جديداً أو سجل خروجه، ينقله للمسار الطبيعي للتطبيق
+            navigate('/onboarding');
+          }
+        }, 300); // وقت الأنيميشن التجميلي للخروج
+
+      } catch (error) {
+        console.error('Error verifying background profile session:', error);
+        // في حال حدوث أي خطأ طارئ، ينقله للمسار الآمن
+        setIsVisible(false);
+        setTimeout(() => navigate('/onboarding'), 300);
+      }
+    };
+
+    // تشغيل دالة الفحص بعد انتهاء وقت عرض اللوجو والترحيب (2.5 ثانية)
     const navigateTimer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(() => navigate('/onboarding'), 300);
+      checkUserSessionAndNavigate();
     }, 2500);
 
     return () => {
