@@ -63,7 +63,7 @@ jobs:
               {
                 "client_info": {
                   "mobilesdk_app_id": "1:162488255991:android:73d6299f11a1b7aec61af2",
-                  "android_client_info": { "package_name": "ai.nawh.app" }
+                  "android_client_info": { "package_name": "ai.nawah.app" }
                 },
                 "api_key": [ { "current_key": "AIzaSyAKjsgnoHnGGr3urhm6Kpu7RvxN2dp6sJQ" } ],
                 "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
@@ -78,10 +78,10 @@ jobs:
           APP_GRADLE="android/app/build.gradle"
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           
-          # تعديل اسم التطبيق ليصبح (نوح) والحزمة لـ (ai.nawh.app)
-          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">نوح<\/string>/' $STRINGS
-          sed -i 's/namespace ".*"/namespace "ai.nawh.app"/' $APP_GRADLE
-          sed -i 's/applicationId ".*"/applicationId "ai.nawh.app"/' $APP_GRADLE
+          # تعديل اسم التطبيق ليصبح (نواة AI) والحزمة لـ (ai.nawah.app)
+          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">نواة AI<\/string>/' $STRINGS
+          sed -i 's/namespace ".*"/namespace "ai.nawah.app"/' $APP_GRADLE
+          sed -i 's/applicationId ".*"/applicationId "ai.nawah.app"/' $APP_GRADLE
           
           # إضافة الأذونات اللازمة (الإنترنت، الإشعارات، التسجيل)
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' $MANIFEST
