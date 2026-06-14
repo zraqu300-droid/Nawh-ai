@@ -8,16 +8,19 @@ A premium, production-ready React starter template with bilingual support (Arabi
 
 ## 🌐 Quick Access & Cloud Consoles | الروابط السريعة ومنصات التحكم السحابية
 
-To make the live management and infrastructure review seamless, use the direct links below to access the integrated cloud instances and the live preview:
-لتسهيل المعاينة الحية ومراجعة البنية التحتية للمشروع، استخدم الروابط المباشرة أدناه للوصول إلى المنصات السحابية المدمجة والعرض المباشر للتطبيق:
+To make the live management and infrastructure review seamless, use the direct links below to access the integrated cloud instances, the live preview, and direct app downloads:
+لتسهيل المعاينة الحية ومراجعة البنية التحتية للمشروع، استخدم الروابط المباشرة أدناه للوصول إلى المنصات السحابية المدمجة، العرض المباشر، وتحميل التطبيق مباشرة:
 
 [![Live Demo | العرض الحي](https://img.shields.io/badge/Demo-Open_Live_Platform-FF69B4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://venerable-frangipane-5e492b.netlify.app)
+[![Download APK | تحميل التطبيق](https://img.shields.io/badge/Download-Nawh_APK_v80-7928CA?style=for-the-badge&logo=android&logoColor=white)](https://github.com/nawh-ai/nawh.ai/releases/latest/download/main-app-release.apk)
 [![Open Supabase Console | سابابيز](https://img.shields.io/badge/Supabase-Open_Database_Console-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/dashboard)
 [![Open Netlify Dashboard | نتفلاي](https://img.shields.io/badge/Netlify-Open_Deployment_Live-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://app.netlify.com)
 
 ### 📌 Quick Instructions for Links | إرشادات سريعة لاستخدام الروابط:
 * **Live Demo (Pink Badge):** Click to preview the active web platform directly from Netlify.
   * **العرض الحي (الشارة الوردية):** اضغط لمعاينة وتجربة المنصة الحية والنشطة مباشرة على خادم Netlify.
+* **Download APK (Purple Badge):** Direct raw link to download the compiled Android production app (`v80`) for live device testing.
+  * **تحميل التطبيق (الشارة البنفسجية):** رابط مباشر لتحميل ملف الـ APK الأصيل والمجمّع للإصدار المستقر (`v80`) لتجربته مباشرة على الهاتف.
 * **Supabase Console (Green Badge):** Quick access to log into your database, handle RLS policies, and view tables.
   * **منصة سابابيز (الشارة الخضراء):** وصول سريع لتسجيل الدخول لقاعدة البيانات، إدارة سياسات الأمان (RLS)، واستعراض الجداول.
 * **Netlify Dashboard (Cyan Badge):** Manage deployment environments, build status, and environment variables.
