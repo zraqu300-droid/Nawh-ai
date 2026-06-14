@@ -1,11 +1,18 @@
+# 🛠️ إعدادات بناء وتشغيل مشروع Vite والـ Functions
 [build]
-  # الأمر المسؤول عن تجميع وبناء مشروع Vite
   command = "npm run build"
-  
-  # المجلد الناتج عن البناء والذي يحتوي على ملفات التشغيل (مهم جداً في Vite)
   publish = "dist"
 
-# هذا الجزء يمنع ظهور الشاشة البيضاء عند التنقل أو تحديث الصفحة
+# 📂 توجيه Netlify لقراءة ملفات الـ API كـ Serverless Functions
+[functions]
+  directory = "api"
+
+# 🚀 القاعدة الأولى: توجيه طلبات الـ API إلى مجلد الـ Functions مباشرة (يجب أن تكون في الأعلى)
+[[redirects]]
+  from = "/api/*"
+  status = 200
+
+# 🔮 القاعدة الثانية: منع ظهور الشاشة البيضاء عند تحديث صفحات الـ React (SPA Routing)
 [[redirects]]
   from = "/*"
   to = "/index.html"
