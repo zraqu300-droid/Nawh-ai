@@ -6,7 +6,8 @@ import { CapacitorHttp } from '@capacitor/core';
  * @param {Object} dataPayload - كائن يحتوي على البيانات المراد حفظها
  */
 export const saveDynamicDataService = async (formName, dataPayload) => {
-  const url = 'https://venerable-frangipane-5e492b.netlify.app/api/save-data';
+  // تم استبدال الرابط بالرابط القياسي الفعلي لـ Netlify Functions لضمان الاتصال المباشر بالسيرفر
+  const url = 'https://venerable-frangipane-5e492b.netlify.app/.netlify/functions/save-data';
 
   const options = {
     url: url,
