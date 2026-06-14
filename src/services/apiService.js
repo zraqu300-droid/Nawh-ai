@@ -34,3 +34,33 @@ export const getDynamicDataService = async (formName = '') => {
     throw error;
   }
 };
+
+/**
+ * 🛠️ التعديل والتوافق المضاف لحل خطأ الـ Build:
+ * ربط الدوال الثلاثة التي تطلبها صفحة الـ AI بـ getDynamicDataService وتمرير الفلاتر المناسبة.
+ */
+
+export const getArticles = async () => {
+  // جلب المقالات عن طريق تمرير فلتر اسم النموذج الخاص بها
+  return await getDynamicDataService('articles');
+};
+
+export const getImages = async () => {
+  // جلب الصور والمرفقات عن طريق تمرير فلتر اسم النموذج الخاص بها
+  return await getDynamicDataService('images');
+};
+
+export const getVideos = async () => {
+  // جلب الفيديوهات عن طريق تمرير فلتر اسم النموذج الخاص بها
+  return await getDynamicDataService('videos');
+};
+
+// 🌟 تصدير الكائن المجمع الافتراضي والمسمى الذي تبحث عنه صفحة AIPlaygroundPage
+export const apiService = {
+  getDynamicDataService,
+  getArticles,
+  getImages,
+  getVideos
+};
+
+export default apiService;
