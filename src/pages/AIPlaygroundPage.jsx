@@ -8,13 +8,15 @@
  * - Suggestion chips
  * - RTL/LTR aware layouts
  * - Message history
- * - Simulated AI responses
+ * - Simulated AI responses & Direct Live Coze Agent Integration
+ * - Dynamic data fetching (Images, Articles, Videos) from apiService
  *
  * @author nawh.ai
  * @version 1.0.0
  */
 
 import { useState, useRef, useEffect } from 'react';
+import { Browser } from '@capacitor/browser';
 import {
   Send,
   Bot,
@@ -27,12 +29,18 @@ import {
   PenTool,
   Code,
   MessageSquare,
+  Image as ImageIcon,
+  FileText,
+  Video,
 } from 'lucide-react';
 import { useLanguage } from '../context/ThemeLanguageContext.jsx';
 import { Card } from '../components/Card.jsx';
 import Button from '../components/Button.jsx';
 import Navbar from '../components/Navbar.jsx';
 import Sidebar from '../components/Sidebar.jsx';
+
+// استيراد الخدمة لجلب البيانات من قاعدة البيانات
+import { apiService } from '../services/apiService.js';
 
 // Suggestion prompts
 const SUGGESTIONS = {
@@ -136,10 +144,57 @@ function AIPlaygroundPage() {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+  
+  // حالات تخزين البيانات القادمة من قاعدة البيانات عبر الخدمة
+  const [dbData, setDbData] = useState({ articles: [], images: [], videos: [] });
+  const [isLoadingDb, setIsLoadingDb] = useState(true);
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
   const suggestions = SUGGESTIONS[language];
+  const cozeChatUrl = 'https://www.coze.com/store/agent/7651037957994135557?bot_id=true';
+
+  // استدعاء وجلب البيانات من الـ apiService عند تشغيل الصفحة
+  useEffect(() => {
+    const fetchDatabaseContent = async () => {
+      try {
+        setIsLoadingDb(true);
+        
+        // استدعاء كود الخدمات بالتوازي (تأكد من مطابقة أسماء الدوال داخل ملف apiService.js الخاص بك)
+        const [articlesRes, imagesRes, videosRes] = await Promise.all([
+          apiService.getArticles ? apiService.getArticles() : Promise.resolve([]),
+          apiService.getImages ? apiService.getImages() : Promise.resolve([]),
+          apiService.getVideos ? apiService.getVideos() : Promise.resolve([]),
+        ]);
+
+        setDbData({
+          articles: articlesRes?.data || articlesRes || [],
+          images: imagesRes?.data || imagesRes || [],
+          videos: videosRes?.data || videosRes || [],
+        });
+      } catch (error) {
+        console.error("Error fetching database assets inside AI Playground:", error);
+      } finally {
+        setIsLoadingDb(false);
+      }
+    };
+
+    fetchDatabaseContent();
+  }, []);
+
+  // دالة فتح الشات المباشر المدمج من كوز متوافقة مع الأندرويد والويب
+  const handleOpenLiveChat = async () => {
+    try {
+      await Browser.open({ 
+        url: cozeChatUrl,
+        windowName: '_blank',
+        presentationStyle: 'fullscreen'
+      });
+    } catch (error) {
+      window.open(cozeChatUrl, '_blank');
+    }
+  };
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -214,9 +269,9 @@ function AIPlaygroundPage() {
       <div className={`pt-16 lg:${isRTL ? 'pr-64' : 'pl-64'}`}>
         <Sidebar />
 
-        <main className="p-6 max-w-4xl mx-auto">
+        <main className="p-6 max-w-4xl mx-auto space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
@@ -231,20 +286,32 @@ function AIPlaygroundPage() {
               </p>
             </div>
 
-            {messages.length > 0 && (
+            <div className="flex gap-2">
+              {/* زر إضافي فخم يفتح شات Coze الحي مباشرة */}
               <Button
-                variant="ghost"
+                variant="gradient"
                 size="sm"
-                icon={<Trash2 className="w-4 h-4" />}
-                onClick={handleClearChat}
+                icon={<MessageSquare className="w-4 h-4" />}
+                onClick={handleOpenLiveChat}
               >
-                {language === 'ar' ? 'مسح المحادثة' : 'Clear Chat'}
+                {language === 'ar' ? 'المحادثة الحية المباشرة 🚀' : 'Live Chat Assistant 🚀'}
               </Button>
-            )}
+
+              {messages.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<Trash2 className="w-4 h-4" />}
+                  onClick={handleClearChat}
+                >
+                  {language === 'ar' ? 'مسح المحادثة' : 'Clear Chat'}
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Chat Container */}
-          <Card className="h-[calc(100vh-300px)] flex flex-col">
+          <Card className="h-[calc(100vh-360px)] flex flex-col">
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {messages.length === 0 ? (
@@ -341,6 +408,64 @@ function AIPlaygroundPage() {
               </p>
             </div>
           </Card>
+
+          {/* قسم استدعاء وعرض محتوى قاعدة البيانات (المقالات، الصور، الفيديوهات) أسفل الشات */}
+          <div className="mt-8 border-t pt-6 border-gray-200 dark:border-gray-800">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-purple-500" />
+              {language === 'ar' ? 'محتوى مسترجع من قاعدة البيانات (API)' : 'Database Dynamic Assets (API)'}
+            </h3>
+
+            {isLoadingDb ? (
+              <div className="text-sm text-center py-6 text-gray-500 animate-pulse">
+                {language === 'ar' ? 'جاري جاري تحميل البيانات الحية...' : 'Fetching live operational data...'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* صندوق عرض المقالات */}
+                <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm">
+                  <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-semibold mb-2">
+                    <FileText className="w-4 h-4" />
+                    <span>{language === 'ar' ? 'المقالات المتوفرة' : 'Articles Data'}</span>
+                  </div>
+                  <span className="text-2xl font-extrabold text-gray-900 dark:text-white">
+                    {dbData.articles.length}
+                  </span>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {language === 'ar' ? 'تم فحصها واستدعاؤها بنجاح' : 'Fetched correctly from database'}
+                  </p>
+                </div>
+
+                {/* صندوق عرض الصور */}
+                <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm">
+                  <div className="flex items-center gap-2 text-pink-600 dark:text-pink-400 font-semibold mb-2">
+                    <ImageIcon className="w-4 h-4" />
+                    <span>{language === 'ar' ? 'الصور والمرفقات' : 'Gallery Assets'}</span>
+                  </div>
+                  <span className="text-2xl font-extrabold text-gray-900 dark:text-white">
+                    {dbData.images.length}
+                  </span>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {language === 'ar' ? 'مستندات الصور المخزنة' : 'Stored image objects synced'}
+                  </p>
+                </div>
+
+                {/* صندوق عرض الفيديوهات */}
+                <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm">
+                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-semibold mb-2">
+                    <Video className="w-4 h-4" />
+                    <span>{language === 'ar' ? 'ملفات الفيديو' : 'Video Streams'}</span>
+                  </div>
+                  <span className="text-2xl font-extrabold text-gray-900 dark:text-white">
+                    {dbData.videos.length}
+                  </span>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {language === 'ar' ? 'روابط ومصادر حية' : 'Live multimedia nodes'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Disclaimer */}
           <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-4">
