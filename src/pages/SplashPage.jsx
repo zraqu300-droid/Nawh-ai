@@ -17,8 +17,8 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/ThemeLanguageContext.jsx';
 
-// 1️⃣ استيراد كائن سوبابيز المربوط بالتخزين الدائم للموبايل
-import { supabase } from '../services/supabaseClient'; // تأكد من مطابقة المسار لملف السوبابيز الخاص بك
+// 1️⃣ استيراد كائن سوبابيز بالمسار الدقيق المصلح والمطابق لمشروعك تماماً
+import { supabase } from '../supabaseClient'; 
 
 /**
  * SplashPage Component
