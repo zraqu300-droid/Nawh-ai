@@ -6,18 +6,18 @@ import { CapacitorHttp } from '@capacitor/core';
  * @param {Object} dataPayload - كائن يحتوي على البيانات المراد حفظها
  */
 export const saveDynamicDataService = async (formName, dataPayload) => {
-  // تم استبدال الرابط بالرابط القياسي الفعلي لـ Netlify Functions لضمان الاتصال المباشر بالسيرفر
-  const url = 'https://venerable-frangipane-5e492b.netlify.app/.netlify/functions/save-data';
+  // تم تحديث الرابط ليتوافق مع هيكلية API في Vercel
+  const url = 'https://nawhai.vercel.app/api/save-data';
 
   const options = {
     url: url,
     headers: { 
       'Content-Type': 'application/json' 
     },
-    // في CapacitorHttp نقوم بإرسال الكائن مباشرة في الـ data والمنصة تتكفل بالباقي
+    // في CapacitorHttp نقوم بإرسال الكائن مباشرة في الـ data
     data: {
       form_name: formName,
-      data: dataPayload
+      payload: dataPayload // تأكد أن المفتاح يطابق ما تتوقعه في ملف route.js الجديد
     }
   };
 
