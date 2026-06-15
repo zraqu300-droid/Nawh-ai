@@ -1,40 +1,51 @@
-// api/save-data.js
 import pg from 'pg';
-const { Client } = pg;
+import { NextResponse } from 'next/server';
 
-export async function handler(event, context) {
-  // للتأكد من استقبال الطلبات بشكل صحيح وحل مشكلة الـ CORS
-  if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      },
-      body: JSON.stringify({ message: "Successful Preflight" }),
-    };
-  }
+const { Pool } = pg;
 
+// إعداد الاتصال باستخدام Pool
+const pool = new Pool({
+  connectionString: process.env.SUPABASE_DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+export async function POST(request) {
   try {
-    // كود الاتصال بقاعدة البيانات الخاص بك هنا
+    // 1. استقبال البيانات المرسلة من الفرونت إند
+    const body = await request.json();
+    const { form_name, payload } = body;
+
+    // 2. التحقق من وجود البيانات
+    if (!form_name || !payload) {
+      return NextResponse.json(
+        { success: false, error: 'Missing form_name or payload' },
+        { status: 400 }
+      );
+    }
+
+    // 3. إدخال البيانات في قاعدة البيانات
+    const query = `
+      INSERT INTO dynamic_payloads (form_name, payload, created_at)
+      VALUES ($1, $2, NOW())
+      RETURNING id;
+    `;
+    const values = [form_name, payload];
     
-    return {
-      statusCode: 200,
-      headers: { 
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      },
-      body: JSON.stringify({ success: true, message: "Connected and Data Processed Successfully!" }),
-    };
+    await pool.query(query, values);
+
+    // 4. الرد بنجاح
+    return NextResponse.json(
+      { success: true, message: 'Data saved successfully!' },
+      { 
+        status: 200,
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      }
+    );
+
   } catch (error) {
-    return {
-      statusCode: 500,
-      headers: { 
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      },
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
