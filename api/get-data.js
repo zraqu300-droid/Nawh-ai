@@ -1,42 +1,25 @@
 import pg from 'pg';
+import { NextResponse } from 'next/server';
 
-const { Client } = pg;
+const { Pool } = pg;
 
-export const handler = async (event, context) => {
-  // السماح بطلبات GET فقط لجلب البيانات
-  if (event.httpMethod !== 'GET') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed' }),
-    };
-  }
+// إعداد الاتصال باستخدام Pool لضمان كفاءة التعامل مع الطلبات في فيرسل
+const pool = new Pool({
+  connectionString: process.env.SUPABASE_DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-  // جلب رابط سلسلة الاتصال من متغيرات البيئة في Netlify
-  const connectionString = process.env.SUPABASE_DATABASE_URL;
-
-  if (!connectionString) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Database connection string is missing.' }),
-    };
-  }
-
-  const client = new Client({
-    connectionString: connectionString,
-    ssl: { rejectUnauthorized: false }
-  });
-
+export async function GET(request) {
   try {
-    await client.connect();
-
-    // جلب المعاملات (Query Parameters) من الرابط إذا وُجدت (مثال: ?form_name=user_register)
-    const formNameFilter = event.queryStringParameters && event.queryStringParameters.form_name;
+    // استخراج الفلاتر (Query Parameters) من الرابط
+    const { searchParams } = new URL(request.url);
+    const formNameFilter = searchParams.get('form_name');
 
     let query = '';
     let values = [];
 
     if (formNameFilter) {
-      // إذا أرسل المستخدم اسم نموذج معين، يتم جلب بيانات هذا النموذج فقط بترتيب من الأحدث للأقدم
+      // جلب بيانات نموذج محدد
       query = `
         SELECT id, form_name, payload, created_at 
         FROM dynamic_payloads 
@@ -45,7 +28,7 @@ export const handler = async (event, context) => {
       `;
       values = [formNameFilter];
     } else {
-      // إذا لم يرسل أي فلتر، يتم جلب كافة البيانات الموجودة في الجدول بترتيب من الأحدث للأقدم
+      // جلب كافة البيانات
       query = `
         SELECT id, form_name, payload, created_at 
         FROM dynamic_payloads 
@@ -53,32 +36,25 @@ export const handler = async (event, context) => {
       `;
     }
 
-    const result = await client.query(query, values);
-    
-    // إغلاق الاتصال بنجاح
-    await client.end();
+    // تنفيذ الاستعلام
+    const result = await pool.query(query, values);
 
-    return {
-      statusCode: 200,
+    // إرجاع النتيجة بتنسيق Next.js
+    return NextResponse.json({
+      success: true,
+      count: result.rows.length,
+      data: result.rows,
+    }, {
+      status: 200,
       headers: {
-        'Content-Type': 'application/json',
-        // تفعيل الـ CORS لتتمكن من طلب الـ API من أي مكان في الفرونت إند
-        'Access-Control-Allow-Origin': '*', 
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({
-        success: true,
-        count: result.rows.length,
-        data: result.rows,
-      }),
-    };
+    });
 
   } catch (error) {
-    // التأكد من إغلاق الاتصال في حالة حدوث خطأ مفاجئ
-    try { await client.end(); } catch (e) {}
-    
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message || 'Internal Server Error' }),
-    };
+    return NextResponse.json(
+      { error: error.message || 'Internal Server Error' },
+      { status: 500 }
+    );
   }
-};
+}
