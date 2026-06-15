@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { Preferences } from '@capacitor/preferences';
 
-const supabaseUrl = 'https://wlbpqnbkbonbbuodmfcq.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsYnBxbmJrYm9uYmJ1b2RtZmNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzODExMjIsImV4cCI6MjA5Njk1NzEyMn0.SUgQ3j1o96rAvJjT9roCKPLllq-KkCSDCorq9cz2a1c';
+// تم تحديث الرابط والمفتاح بالبيانات الجديدة التي زودتني بها
+const supabaseUrl = 'https://bifewdnqarrzcdwybfxq.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZmV3ZG5xYXJyemNkd3liZnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NTM0NjQsImV4cCI6MjA5NzEyOTQ2NH0.WB36qyVaISYYG7dIVNwDdtWR5kc_Fo-6jGEIWI4wjh0';
 
 // 1️⃣ إعداد مخزن بيانات مخصص يتصل بذاكرة الموبايل الأصلية عبر كاباسيتور
 const capacitorAuthStorage = {
