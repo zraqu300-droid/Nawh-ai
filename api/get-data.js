@@ -2,8 +2,9 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
+// تم تحديث المتغير إلى SUPABASE_URL ليتوافق مع إعدادات Vercel لديك
 const pool = new Pool({
-  connectionString: process.env.SUPABASE_DATABASE_URL,
+  connectionString: process.env.SUPABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
