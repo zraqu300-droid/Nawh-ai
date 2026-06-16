@@ -1,25 +1,34 @@
 import pg from 'pg';
-import { NextResponse } from 'next/server';
 
 const { Pool } = pg;
 
-// إعداد الاتصال باستخدام Pool لضمان كفاءة التعامل مع الطلبات في فيرسل
 const pool = new Pool({
   connectionString: process.env.SUPABASE_DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-export async function GET(request) {
+export default async function handler(req, res) {
+  // تفعيل الـ CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
   try {
-    // استخراج الفلاتر (Query Parameters) من الرابط
-    const { searchParams } = new URL(request.url);
-    const formNameFilter = searchParams.get('form_name');
+    // استخراج الفلاتر (Query Parameters)
+    const formNameFilter = req.query.form_name;
 
     let query = '';
     let values = [];
 
     if (formNameFilter) {
-      // جلب بيانات نموذج محدد
       query = `
         SELECT id, form_name, payload, created_at 
         FROM dynamic_payloads 
@@ -28,7 +37,6 @@ export async function GET(request) {
       `;
       values = [formNameFilter];
     } else {
-      // جلب كافة البيانات
       query = `
         SELECT id, form_name, payload, created_at 
         FROM dynamic_payloads 
@@ -36,25 +44,15 @@ export async function GET(request) {
       `;
     }
 
-    // تنفيذ الاستعلام
     const result = await pool.query(query, values);
 
-    // إرجاع النتيجة بتنسيق Next.js
-    return NextResponse.json({
+    return res.status(200).json({
       success: true,
       count: result.rows.length,
       data: result.rows,
-    }, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      },
     });
 
   } catch (error) {
-    return NextResponse.json(
-      { error: error.message || 'Internal Server Error' },
-      { status: 500 }
-    );
+    return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 }
