@@ -1,19 +1,20 @@
-const { Pool } = require('pg');
+import pg from 'pg';
 
-// إعداد الاتصال باستخدام المتغير الذي لديك في Vercel
+const { Pool } = pg;
+
+// الاتصال بقاعدة البيانات باستخدام المتغير الموجود في إعداداتك
 const pool = new Pool({
   connectionString: process.env.SUPABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// استخدام module.exports هو الطريقة الأكثر توافقاً مع Vercel + Vite
-module.exports = async (req, res) => {
-  // تفعيل الـ CORS للسماح بالاتصال من أي مكان
+// دالة التصدير الافتراضية
+export default async function handler(req, res) {
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // معالجة طلبات الـ Preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -41,4 +42,4 @@ module.exports = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
   }
-};
+}
