@@ -7,9 +7,9 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// هذا هو التصدير الافتراضي المطلوب لـ Vercel Functions
+// هذا هو التصدير الافتراضي الذي يبحث عنه Vercel
 export default async function handler(req, res) {
-  // 1. التعامل مع الـ CORS (لحل مشاكل الاتصال من Capacitor)
+  // 1. التعامل مع CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 2. استقبال البيانات
+    // 2. استقبال البيانات (في Vercel Functions يتم قراءة req.body مباشرة)
     const { form_name, payload } = req.body;
 
     if (!form_name || !payload) {
