@@ -5,8 +5,8 @@ import { CapacitorHttp } from '@capacitor/core';
  * @param {string} [formName] - اختياري: اسم النموذج لفلترة البيانات
  */
 export const getDynamicDataService = async (formName = '') => {
-  // تم تصحيح الرابط هنا إلى الرابط القياسي المباشر للـ Functions لضمان تخطي بوابة الـ React
-  let url = 'https://venerable-frangipane-5e492b.netlify.app/.netlify/functions/get-data';
+  // تم تحديث الرابط ليتوافق مع هيكلية API في Vercel
+  let url = 'https://nawhai.vercel.app/api/data';
   
   // إضافة الفلتر إلى الرابط كـ Query Parameter إذا تم تمريره
   if (formName) {
