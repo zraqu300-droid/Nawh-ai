@@ -1,45 +1,56 @@
-import pg from 'pg';
+import { neon } from '@neondatabase/serverless';
 
-const { Pool } = pg;
+export default async function handler(request, response) {
+    // إعدادات CORS
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-// الاتصال بقاعدة البيانات باستخدام المتغير الموجود في إعداداتك
-const pool = new Pool({
-  connectionString: process.env.SUPABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+    if (request.method === 'OPTIONS') return response.status(200).end();
 
-// دالة التصدير الافتراضية
-export default async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    try {
+        // الاتصال بقاعدة البيانات (يتم داخل الدالة في Neon Serverless)
+        const sql = neon(process.env.DATABASE_URL);
+        
+        const body = request.body;
+        let dataToSave = Array.isArray(body) ? body : (body.posts || body.data || [body]);
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+        const results = [];
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+        for (const item of dataToSave) {
+            const content = item.content || item.text || item.body || item.message || JSON.stringify(item); 
+            const media_url = item.media_url || item.url || item.image || item.link || '';
+            const section = item.section || body.section || 'bouh-display';
+            const age = parseInt(item.age || body.age || 0);
+            const name = item.name || body.name || 'User';
+            const p_type = item.type || (media_url ? 'رابط' : 'نصي');
 
-  try {
-    const { form_name, payload } = req.body;
+            const res = await sql`
+                INSERT INTO posts (
+                    content, media_url, section, type, age, name
+                ) VALUES (
+                    ${String(content)}, 
+                    ${String(media_url)}, 
+                    ${String(section)}, 
+                    ${String(p_type)}, 
+                    ${age}, 
+                    ${String(name)}
+                ) RETURNING id;
+            `;
+            results.push(res[0].id);
+        }
 
-    if (!form_name || !payload) {
-      return res.status(400).json({ success: false, error: 'Missing form_name or payload' });
+        return response.status(200).json({ 
+            success: true, 
+            message: "تم الحفظ بنجاح عبر Neon",
+            inserted_ids: results
+        });
+
+    } catch (error) {
+        console.error('CRITICAL DATABASE ERROR:', error);
+        return response.status(500).json({ 
+            success: false, 
+            error: error.message
+        });
     }
-
-    const query = `
-      INSERT INTO dynamic_payloads (form_name, payload, created_at)
-      VALUES ($1, $2, NOW())
-      RETURNING id;
-    `;
-    
-    await pool.query(query, [form_name, payload]);
-
-    return res.status(200).json({ success: true, message: 'Data saved successfully!' });
-  } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
-  }
 }
