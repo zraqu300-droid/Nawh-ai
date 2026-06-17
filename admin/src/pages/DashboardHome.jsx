@@ -1,622 +1,439 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
-// تأكد من تثبيت الـ Icons عبر: npm install @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faFile, faImage, faVideo, faLink, faExchangeAlt, 
-  faExclamationTriangle, faQuestionCircle, faSync, faUpload, faCheckCircle, faInfoCircle 
-} from '@fortawesome/free-solid-svg-icons';
+  TrendingUp, 
+  Database, 
+  FileText, 
+  Image as ImageIcon, 
+  Video, 
+  Layers, 
+  Link as LinkIcon,
+  Upload,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  Sparkles,
+  ArrowLeftRight
+} from 'lucide-react';
 
-// --- الأنماط والتصميم (Styled Components) ---
-
-const Container = styled.div`
-  background-color: #0e111a; 
-  background-image: radial-gradient(circle at 5% 20%, rgba(110, 0, 255, 0.15) 0%, transparent 50%),
-                    radial-gradient(circle at 95% 80%, rgba(255, 0, 222, 0.1) 0%, transparent 50%);
-  color: #fff;
-  min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  padding: 30px;
-  box-sizing: border-box;
-  direction: rtl; /* لدعم الواجهة العربية بشكل صحيح */
-`;
-
-const MainGrid = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-`;
-
-const HeaderBanner = styled.div`
-  width: 100%;
-  background: linear-gradient(90deg, #1d52d4 0%, #ff5722 100%);
-  border-radius: 14px;
-  padding: 20px 25px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-`;
-
-const HeaderText = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-`;
-
-const HeaderTitle = styled.h1`
-  margin: 0;
-  font-size: 1.6rem;
-  font-weight: 700;
-`;
-
-const HeaderSubtitle = styled.p`
-  margin: 0;
-  opacity: 0.85;
-  font-size: 0.95rem;
-`;
-
-const LogoSection = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(5px);
-  border-radius: 10px;
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-`;
-
-const LogoText = styled.span`
-  font-size: 1rem;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-`;
-
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  width: 100%;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const StatCard = styled.div`
-  background-color: #161b26;
-  border: 1px solid #222938;
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-`;
-
-const StatHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 15px;
-`;
-
-const StatTitle = styled.h3`
-  margin: 0;
-  font-size: 0.95rem;
-  color: #a0aec0;
-  font-weight: 500;
-`;
-
-const StatIconBox = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #3d7cff;
-`;
-
-const StatNumber = styled.div`
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 5px;
-`;
-
-const StatGains = styled.span`
-  font-size: 0.85rem;
-  color: ${props => props.up ? '#48bb78' : '#a0aec0'};
-`;
-
-const ProgressTrack = styled.div`
-  width: 100%;
-  height: 6px;
-  background-color: #2d3748;
-  border-radius: 3px;
-  margin-top: 10px;
-  overflow: hidden;
-`;
-
-const ProgressFill = styled.div`
-  width: 28%;
-  height: 100%;
-  background: linear-gradient(90deg, #6e00ff, #ff00de);
-`;
-
-const ContentLayout = styled.div`
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
-  width: 100%;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const CreatorCard = styled.div`
-  background-color: #161b26;
-  border: 1px solid #222938;
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-`;
-
-const CreatorHeader = styled.div`
-  background: linear-gradient(90deg, #2b3595 0%, #d44b1d 100%);
-  padding: 12px 20px;
-  font-weight: 600;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const CreatorBody = styled.div`
-  padding: 25px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-`;
-
-const SectionCentering = styled.div`
-  text-align: center;
-  margin-bottom: 10px;
-`;
-
-const SectionMainTitle = styled.h2`
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-`;
-
-const SectionSubTitle = styled.p`
-  margin: 4px 0 0 0;
-  font-size: 0.9rem;
-  color: #a0aec0;
-`;
-
-const TypeSelector = styled.div`
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  margin-bottom: 10px;
-  direction: ltr; /* للحفاظ على ترتيب الأزرار الإنجليزية كما بالصورة */
-`;
-
-const TypeButton = styled.button`
-  background-color: ${props => props.active ? '#1e2538' : '#111520'};
-  color: #fff;
-  border: 1px solid ${props => props.active ? '#533bfe' : '#222938'};
-  border-radius: 10px;
-  padding: 12px 5px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: #533bfe;
-  }
-`;
-
-const IconWrapper = styled.div`
-  font-size: 1.2rem;
-  color: ${props => props.iconColor || '#fff'};
-`;
-
-const Input = styled.input`
-  width: 100%;
-  background-color: #f7fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 12px 15px;
-  color: #1a202c;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  outline: none;
-  text-align: right;
-
-  &::placeholder {
-    color: #a0aec0;
-  }
-`;
-
-const Textarea = styled.textarea`
-  width: 100%;
-  background-color: #f7fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 12px 15px;
-  color: #1a202c;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  min-height: 100px;
-  resize: none;
-  outline: none;
-  text-align: right;
-
-  &::placeholder {
-    color: #a0aec0;
-  }
-`;
-
-const DotsContainer = styled.div`
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  margin: 5px 0;
-`;
-
-const Dot = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: ${props => props.active ? '#fff' : '#4a5568'};
-`;
-
-const ErrorBanner = styled.div`
-  background-color: #fff5f5;
-  border: 1px solid #fed7d7;
-  border-radius: 8px;
-  padding: 12px 15px;
-  color: #c53030;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.9rem;
-  font-weight: 500;
-`;
-
-const SubmitButton = styled.button`
-  width: 100%;
-  background: linear-gradient(90deg, #1d52d4 0%, #ff5722 100%);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 14px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-`;
-
-const SidebarLogs = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-`;
-
-const LightCard = styled.div`
-  background-color: #f7fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px;
-  color: #1a202c;
-`;
-
-const LightCardTitleBlock = styled.div`
-  text-align: center;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 12px;
-  margin-bottom: 15px;
-`;
-
-const LightCardTitleEN = styled.div`
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #718096;
-  text-transform: uppercase;
-  margin-bottom: 2px;
-`;
-
-const LightCardTitleAR = styled.div`
-  font-size: 1rem;
-  font-weight: 700;
-  color: #2d3748;
-`;
-
-const QuickActionsGrid = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
-
-const PrimaryActionButton = styled.button`
-  background: linear-gradient(90deg, #3d7cff 0%, #ff763b 100%);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-`;
-
-const SecondaryActionButton = styled.button`
-  background-color: #edf2f7;
-  color: #4a5568;
-  border: 1px solid #cbd5e0;
-  border-radius: 8px;
-  padding: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  &:hover {
-    background-color: #e2e8f0;
-  }
-`;
-
-const ActivityList = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const ActivityItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #edf2f7;
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const ActivityLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2d3748;
-`;
-
-const ActivityTime = styled.span`
-  font-size: 0.8rem;
-  color: #718096;
-`;
-
-const FloatingHelp = styled.div`
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  background-color: #161b26;
-  border: 1px solid #222938;
-  color: #a0aec0;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-
-  &:hover {
-    color: #fff;
-  }
-`;
-
-// --- المكون الرئيسي للملف ---
-
-export default function DashboardHome() {
+export default function Dashboard() {
   const [activeType, setActiveType] = useState('Image');
 
+  // كائنات الستايل المدمجة بديلة للـ CSS الخارجي
+  const styles = {
+    container: {
+      direction: 'rtl',
+      minHeight: '100vh',
+      backgroundColor: '#0e111a',
+      color: '#ffffff',
+      padding: '24px',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      position: 'relative',
+      overflow: 'hidden',
+      boxSizing: 'border-box'
+    },
+    glowTop: {
+      position: 'absolute',
+      top: '-10%',
+      left: '-10%',
+      width: '500px',
+      height: '500px',
+      borderRadius: '50%',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      filter: 'blur(130px)',
+      pointerEvents: 'none'
+    },
+    glowBottom: {
+      position: 'absolute',
+      bottom: '-10%',
+      right: '-10%',
+      width: '600px',
+      height: '600px',
+      borderRadius: '50%',
+      backgroundColor: 'rgba(236, 72, 153, 0.1)',
+      filter: 'blur(150px)',
+      pointerEvents: 'none'
+    },
+    wrapper: {
+      maxWidth: '1280px',
+      margin: '0 auto',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '24px',
+      position: 'relative',
+      zIndex: 10
+    },
+    headerRow: {
+      display: 'flex',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: '16px',
+      alignItems: 'stretch'
+    },
+    banner: {
+      flex: 1,
+      background: 'linear-gradient(90deg, #3d7cff 0%, #9147ff 50%, #ff763b 100%)',
+      borderRadius: '16px',
+      padding: '20px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)'
+    },
+    logoBox: {
+      backgroundColor: '#161b26',
+      border: '1px solid #222938',
+      borderRadius: '16px',
+      padding: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      itemsCenter: 'center',
+      justifyContent: 'center',
+      minWidth: '140px',
+      textAlign: 'center',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+    },
+    logoIconCircle: {
+      width: '48px',
+      height: '48px',
+      borderRadius: '12px',
+      background: 'linear-gradient(135deg, #3d7cff, #ff763b)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 8px auto',
+      boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.2)'
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+      gap: '20px'
+    },
+    statCard: {
+      backgroundColor: '#161b26',
+      border: '1px solid #222938',
+      borderRadius: '16px',
+      padding: '20px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between'
+    },
+    iconWrapper: {
+      padding: '10px',
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '12px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    mainLayout: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+      gap: '24px'
+    },
+    rightSection: {
+      gridColumn: 'span 2',
+      backgroundColor: '#161b26',
+      border: '1px solid #222938',
+      borderRadius: '16px',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column'
+    },
+    creatorHeader: {
+      background: 'linear-gradient(90deg, #2b3595, #d44b1d)',
+      padding: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px'
+    },
+    creatorBody: {
+      padding: '24px',
+      backgroundColor: '#f3f4f6',
+      color: '#1a202c',
+      borderBottomLeftRadius: '16px',
+      borderBottomRightRadius: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px'
+    },
+    typeSelectorGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(5, 1fr)',
+      gap: '8px',
+      direction: 'ltr'
+    },
+    typeBtn: (isActive) => ({
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '12px 4px',
+      borderRadius: '12px',
+      border: isActive ? '2px solid #533bfe' : '1px solid #222938',
+      backgroundColor: isActive ? '#1e2538' : '#111520',
+      color: '#ffffff',
+      cursor: 'pointer',
+      transition: 'all 0.2s'
+    }),
+    inputStyle: {
+      width: '100%',
+      backgroundColor: '#f7fafc',
+      border: '1px solid #e2e8f0',
+      color: '#1a202c',
+      borderRadius: '12px',
+      padding: '12px 16px',
+      fontSize: '13px',
+      outline: 'none',
+      boxSizing: 'border-box'
+    },
+    errorBox: {
+      backgroundColor: '#fff5f5',
+      border: '1px solid #fed7d7',
+      color: '#c53030',
+      borderRadius: '12px',
+      padding: '12px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontSize: '12px',
+      fontWeight: '600'
+    },
+    submitBtn: {
+      width: '100%',
+      background: 'linear-gradient(90deg, #1d52d4, #ff5722)',
+      color: '#ffffff',
+      border: 'none',
+      fontWeight: 'bold',
+      padding: '14px',
+      borderRadius: '12px',
+      fontSize: '13px',
+      cursor: 'pointer',
+      boxShadow: '0 4px 6px rgba(0,0,0,0.15)'
+    },
+    leftSection: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px'
+    },
+    lightCard: {
+      backgroundColor: '#f7fafc',
+      color: '#1a202c',
+      borderRadius: '16px',
+      padding: '20px',
+      border: '1px solid #e2e8f0',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      flex: 1
+    }
+  };
+
   return (
-    <Container>
-      <MainGrid>
+    <div style={styles.container}>
+      {/* تأثيرات الإضاءة النيونية الخلفية */}
+      <div style={styles.glowTop}></div>
+      <div style={styles.glowBottom}></div>
+
+      <div style={styles.wrapper}>
         
-        {/* 1. البانر العلوي */}
-        <HeaderBanner>
-          <HeaderText>
-            <HeaderTitle>لوحة التحكم المركزية</HeaderTitle>
-            <HeaderSubtitle>مرحباً بك في قلب نظام nawh.ai النبضي</HeaderSubtitle>
-          </HeaderText>
-          <LogoSection>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#ff763b" stroke="#3d7cff" strokeWidth="2" strokeLinejoin="round"/>
-            </svg>
-            <LogoText>nawh.ai</LogoText>
-          </LogoSection>
-        </HeaderBanner>
-
-        {/* 2. كروت الإحصائيات الثلاثة */}
-        <StatsGrid>
-          <StatCard>
-            <StatHeader>
-              <StatTitle>إجمالي المستخدمين النشطين</StatTitle>
-              <StatIconBox>
-                <FontAwesomeIcon icon={faExchangeAlt} style={{transform: 'rotate(45deg)'}} />
-              </StatIconBox>
-            </StatHeader>
-            <div>
-              <StatNumber>1,248</StatNumber>
-              <StatGains up>+12% this week</StatGains>
+        {/* البانر العلوي والشعار */}
+        <div style={styles.headerRow}>
+          <div style={styles.banner}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', letterSpacing: '0.5px' }}>لوحة التحكم المركزية</h1>
+              <p style={{ margin: 0, color: '#f0f4ff', fontSize: '14px', opacity: 0.9 }}>مرحباً بك في قلب نظام nawh.ai النبضي</p>
             </div>
-          </StatCard>
-
-          <StatCard>
-            <StatHeader>
-              <StatTitle>السجلات والبيانات المرفوعة</StatTitle>
-              <StatIconBox>
-                <FontAwesomeIcon icon={faExchangeAlt} style={{transform: 'rotate(-45deg)'}} />
-              </StatIconBox>
-            </StatHeader>
-            <div>
-              <StatNumber>84,512</StatNumber>
-              <StatGains up>+5.4% Synced</StatGains>
+            <div style={{ color: 'rgba(255,255,255,0.8)' }}>
+              <Sparkles style={{ width: '28px', height: '28px' }} />
             </div>
-          </StatCard>
+          </div>
+          
+          <div style={styles.logoBox}>
+            <div style={styles.logoIconCircle}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#ff763b" stroke="#3d7cff" strokeWidth="2" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#a0aec0' }}>nawh.ai</span>
+          </div>
+        </div>
 
-          <StatCard>
-            <StatHeader>
-              <StatTitle>حجم سعة قاعدة البيانات</StatTitle>
-              <StatIconBox style={{color: '#ff763b'}}>
-                <FontAwesomeIcon icon={faFile} />
-              </StatIconBox>
-            </StatHeader>
+        {/* كروت الإحصائيات الثلاثة العلوية */}
+        <div style={styles.statsGrid}>
+          {/* الكارت الأول */}
+          <div style={styles.statCard}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontSize: '12px', color: '#a0aec0', fontWeight: '500' }}>إجمالي المستخدمين النشطين</p>
+              <div style={{ ...styles.iconWrapper, color: '#3d7cff' }}>
+                <TrendingUp style={{ width: '20px', height: '20px', transform: 'rotate(45deg)' }} />
+              </div>
+            </div>
             <div>
-              <StatNumber>14.2 GB</StatNumber>
-              <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#a0aec0'}}>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '30px', fontWeight: 'bold' }}>1,248</h3>
+              <span style={{ fontSize: '12px', color: '#48bb78', fontWeight: '500' }}>+12% this week</span>
+            </div>
+          </div>
+
+          {/* الكارت الثاني */}
+          <div style={styles.statCard}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontSize: '12px', color: '#a0aec0', fontWeight: '500' }}>السجلات والبيانات المرفوعة</p>
+              <div style={{ ...styles.iconWrapper, color: '#3d7cff' }}>
+                <TrendingUp style={{ width: '20px', height: '20px', transform: 'rotate(-45deg)' }} />
+              </div>
+            </div>
+            <div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '30px', fontWeight: 'bold' }}>84,512</h3>
+              <span style={{ fontSize: '12px', color: '#48bb78', fontWeight: '500' }}>+5.4% Synced</span>
+            </div>
+          </div>
+
+          {/* الكارت الثالث */}
+          <div style={styles.statCard}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+              <p style={{ margin: 0, fontSize: '12px', color: '#a0aec0', fontWeight: '500' }}>حجم سعة قاعدة البيانات</p>
+              <div style={{ ...styles.iconWrapper, color: '#ff763b' }}>
+                <Database style={{ width: '20px', height: '20px' }} />
+              </div>
+            </div>
+            <div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '30px', fontWeight: 'bold' }}>14.2 GB</h3>
+              <div style={{ width: '100%', backgroundColor: '#2d3748', height: '6px', borderRadius: '999px', overflow: 'hidden', marginBottom: '8px' }}>
+                <div style={{ background: 'linear-gradient(90deg, #6e00ff, #ff00de)', height: '100%', width: '28%', borderRadius: '999px' }}></div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#a0aec0' }}>
                 <span>28% used</span>
                 <span>of 50GB</span>
               </div>
-              <ProgressTrack>
-                <ProgressFill />
-              </ProgressTrack>
             </div>
-          </StatCard>
-        </StatsGrid>
+          </div>
+        </div>
 
-        {/* 3. القسم السفلي المنقسم */}
-        <ContentLayout>
+        {/* تخطيط الأقسام السفلية الرئيسية */}
+        <div style={styles.mainLayout}>
           
-          {/* اليمين: منصة النشر */}
-          <CreatorCard>
-            <CreatorHeader>
-              <FontAwesomeIcon icon={faExchangeAlt} style={{transform: 'rotate(90deg)'}} />
-              <span>منصة نشر وإدارة المحتوى الذكي</span>
-            </CreatorHeader>
+          {/* اليمين: منصة نشر وإدارة المحتوى */}
+          <div style={styles.rightSection}>
+            <div style={styles.creatorHeader}>
+              <ArrowLeftRight style={{ width: '16px', height: '16px', color: '#ffffff', transform: 'rotate(90deg)' }} />
+              <h2 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#ffffff' }}>منصة نشر وإدارة المحتوى الذكي</h2>
+            </div>
+
+            <div style={styles.creatorBody}>
+              <div style={{ textAlign: 'center' }}>
+                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#1a202c' }}>نوع المحتوى المُراد نشره</h4>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#718096' }}>نوع المحتوى المُراد نشره</p>
+              </div>
+
+              {/* أزرار الاختيار الخمسة */}
+              <div style={styles.typeSelectorGrid}>
+                <button type="button" onClick={() => setActiveType('Files')} style={styles.typeBtn(activeType === 'Files')}>
+                  <FileText style={{ width: '20px', height: '20px', color: '#4299e1', marginBottom: '6px' }} />
+                  <span style={{ fontSize: '11px' }}>Files</span>
+                </button>
+                <button type="button" onClick={() => setActiveType('Image')} style={styles.typeBtn(activeType === 'Image')}>
+                  <ImageIcon style={{ width: '20px', height: '20px', color: '#805ad5', marginBottom: '6px' }} />
+                  <span style={{ fontSize: '11px' }}>Image</span>
+                </button>
+                <button type="button" onClick={() => setActiveType('Video')} style={styles.typeBtn(activeType === 'Video')}>
+                  <Video style={{ width: '20px', height: '20px', color: '#3182ce', marginBottom: '6px' }} />
+                  <span style={{ fontSize: '11px' }}>Video</span>
+                </button>
+                <button type="button" onClick={() => setActiveType('Mixed')} style={styles.typeBtn(activeType === 'Mixed')}>
+                  <Layers style={{ width: '20px', height: '20px', color: '#dd6b20', marginBottom: '6px' }} />
+                  <span style={{ fontSize: '11px' }}>Mixed</span>
+                </button>
+                <button type="button" onClick={() => setActiveType('URL')} style={styles.typeBtn(activeType === 'URL')}>
+                  <LinkIcon style={{ width: '20px', height: '20px', color: '#319795', marginBottom: '6px' }} />
+                  <span style={{ fontSize: '11px' }}>URL</span>
+                </button>
+              </div>
+
+              {/* حقول المدخلات */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <input type="text" placeholder="اكتب عنوان المحتوى أو المقالة هنا..." style={styles.inputStyle} />
+                <input type="text" placeholder="أدخل رابط الصورة أو الفيديو (URL)..." style={styles.inputStyle} />
+                <textarea rows="3" placeholder="اكتب تفاصيل الموضوع أو النص السردي هنا..." style={{ ...styles.inputStyle, resize: 'none' }}></textarea>
+              </div>
+
+              {/* النقاط السفلية (Pagination Dots) */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', padding: '4px 0' }}>
+                <span style={{ width: '24px', height: '6px', borderRadius: '999px', backgroundColor: '#4a5568' }}></span>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#cbd5e0' }}></span>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#cbd5e0' }}></span>
+              </div>
+
+              {/* شريط رسالة الخطأ */}
+              <div style={styles.errorBox}>
+                <span style={{ cursor: 'pointer', opacity: 0.6 }}>✕</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>فشل إرسال البيانات، تحقق من اتصال الشبكة والمتغيرات.</span>
+                  <AlertCircle style={{ width: '16px', height: '16px', color: '#e53e3e' }} />
+                </div>
+              </div>
+
+              <button type="button" style={styles.submitBtn}>التالي</button>
+            </div>
+          </div>
+
+          {/* اليسار: كروت الإجراءات والنشاطات الأخيرة المدمجة بالكامل */}
+          <div style={styles.leftSection}>
             
-            <CreatorBody>
-              <SectionCentering>
-                <SectionMainTitle>نوع المحتوى المُراد نشره</SectionMainTitle>
-                <SectionSubTitle>نوع المحتوى المُراد نشره</SectionSubTitle>
-              </SectionCentering>
+            {/* كارت العمليات السريعة */}
+            <div style={styles.lightCard}>
+              <div style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', trackingWith: '1px', color: '#718096', display: 'block', textTransform: 'uppercase' }}>Quick Actions</span>
+                <h3 style={{ margin: '2px 0 0 0', fontSize: '14px', fontWeight: 'bold', color: '#2d3748' }}>الإجراءات والعمليات السريعة</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button type="button" style={{ width: '100%', background: 'linear-gradient(90deg, #3d7cff, #ff763b)', color: '#ffffff', border: 'none', fontWeight: '600', padding: '12px', borderRadius: '12px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <Upload style={{ width: '16px', height: '16px' }} />
+                  Upload File
+                </button>
+                <button type="button" style={{ width: '100%', backgroundColor: '#edf2f7', border: '1px solid #cbd5e0', color: '#4a5568', fontWeight: '600', padding: '12px', borderRadius: '12px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <RefreshCw style={{ width: '16px', height: '16px' }} />
+                  Refresh Server
+                </button>
+              </div>
+            </div>
 
-              <TypeSelector>
-                <TypeButton active={activeType === 'Files'} onClick={() => setActiveType('Files')}>
-                  <IconWrapper iconColor="#4299e1"><FontAwesomeIcon icon={faFile} /></IconWrapper>
-                  <span>Files</span>
-                </TypeButton>
-                <TypeButton active={activeType === 'Image'} onClick={() => setActiveType('Image')}>
-                  <IconWrapper iconColor="#805ad5"><FontAwesomeIcon icon={faImage} /></IconWrapper>
-                  <span>Image</span>
-                </TypeButton>
-                <TypeButton active={activeType === 'Video'} onClick={() => setActiveType('Video')}>
-                  <IconWrapper iconColor="#3182ce"><FontAwesomeIcon icon={faVideo} /></IconWrapper>
-                  <span>Video</span>
-                </TypeButton>
-                <TypeButton active={activeType === 'Mixed'} onClick={() => setActiveType('Mixed')}>
-                  <IconWrapper iconColor="#dd6b20"><FontAwesomeIcon icon={faExchangeAlt} /></IconWrapper>
-                  <span>Mixed</span>
-                </TypeButton>
-                <TypeButton active={activeType === 'URL'} onClick={() => setActiveType('URL')}>
-                  <IconWrapper iconColor="#319795"><FontAwesomeIcon icon={faLink} /></IconWrapper>
-                  <span>URL</span>
-                </TypeButton>
-              </TypeSelector>
+            {/* كارت الأنشطة الأخيرة */}
+            <div style={styles.lightCard}>
+              <div style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', trackingWith: '1px', color: '#718096', display: 'block', textTransform: 'uppercase' }}>Recent Activity</span>
+                <h3 style={{ margin: '2px 0 0 0', fontSize: '14px', fontWeight: 'bold', color: '#2d3748' }}>آخر النشاطات الحية والنظام</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #edf2f7', paddingBottom: '10px' }}>
+                  <span style={{ fontSize: '11px', color: '#718096', fontFamily: 'monospace' }}>13:53 PM</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#2d3748' }}>APK Build Success</span>
+                    <CheckCircle2 style={{ width: '16px', height: '16px', color: '#48bb78' }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: '#718096', fontFamily: 'monospace' }}>13:53 PM</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#2d3748' }}>Config Updated</span>
+                    <AlertCircle style={{ width: '16px', height: '16px', color: '#3182ce' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
 
-              <Input type="text" placeholder="اكتب عنوان المحتوى أو المقالة هنا..." />
-              <Input type="text" placeholder="أدخل رابط الصورة أو الفيديو (URL)..." />
-              <Textarea placeholder="اكتب تفاصيل الموضوع أو النص السردي هنا..." />
+          </div>
+        </div>
+      </div>
 
-              <DotsContainer>
-                <Dot active />
-                <Dot />
-                <Dot />
-              </DotsContainer>
-
-              <ErrorBanner>
-                <FontAwesomeIcon icon={faExclamationTriangle} style={{fontSize: '1.1rem'}} />
-                <span>فشل إرسال البيانات، تحقق من اتصال الشبكة والمتغيرات.</span>
-              </ErrorBanner>
-
-              <SubmitButton>التالي</SubmitButton>
-            </CreatorBody>
-          </CreatorCard>
-
-          {/* اليسار: العمليات السريعة والنشاطات الأخيرة (خلفية بيضاء) */}
-          <SidebarLogs>
-            
-            {/* العمليات السريعة */}
-            <LightCard>
-              <LightCardTitleBlock>
-                <LightCardTitleEN>Quick Actions</LightCardTitleEN>
-                <LightCardTitleAR>الإجراءات والعمليات السريعة</LightCardTitleAR>
-              </LightCardTitleBlock>
-              <QuickActionsGrid>
-                <PrimaryActionButton>
-                  <FontAwesomeIcon icon={faUpload} />
-                  <span>Upload File</span>
-                </PrimaryActionButton>
-                <SecondaryActionButton>
-                  <FontAwesomeIcon icon={faSync} />
-                  <span>Refresh Server</span>
-                </SecondaryActionButton>
-              </QuickActionsGrid>
-            </LightCard>
-
-            {/* الأنشطة الأخيرة */}
-            <LightCard>
-              <LightCardTitleBlock>
-                <LightCardTitleEN>Recent Activity</LightCardTitleEN>
-                <LightCardTitleAR>آخر النشاطات الحية والنظام</LightCardTitleAR>
-              </LightCardTitleBlock>
-              <ActivityList>
-                <ActivityItem>
-                  <ActivityLeft>
-                    <FontAwesomeIcon icon={faCheckCircle} style={{color: '#48bb78'}} />
-                    <span>APK Build Success</span>
-                  </ActivityLeft>
-                  <ActivityTime>13:53 PM</ActivityTime>
-                </ActivityItem>
-                <ActivityItem>
-                  <ActivityLeft>
-                    <FontAwesomeIcon icon={faInfoCircle} style={{color: '#3182ce'}} />
-                    <span>Config Updated</span>
-                  </ActivityLeft>
-                  <ActivityTime>13:53 PM</ActivityTime>
-                </ActivityItem>
-              </ActivityList>
-            </LightCard>
-
-          </SidebarLogs>
-        </ContentLayout>
-
-      </MainGrid>
-
-      {/* زر المساعدة العائم أسفل اليسار */}
-      <FloatingHelp>
-        <FontAwesomeIcon icon={faQuestionCircle} style={{fontSize: '1.2rem'}} />
-      </FloatingHelp>
-    </Container>
+      {/* زر المساعدة العائم الثابت أسفل اليسار */}
+      <div style={{ position: 'fixed', bottom: '20px', left: '20px', zIndex: 50 }}>
+        <button type="button" style={{ width: '40px', height: '40px', backgroundColor: '#161b26', border: '1px solid #222938', color: '#a0aec0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifycontent: 'center', cursor: 'pointer', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <HelpCircle style={{ width: '20px', height: '20px' }} />
+        </button>
+      </div>
+    </div>
   );
 }
