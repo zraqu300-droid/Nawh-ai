@@ -1,19 +1,15 @@
 import { neon } from '@neondatabase/serverless';
 
 export default async function handler(request, response) {
-    if (request.method !== 'GET') return response.status(405).end();
-    
+    response.setHeader('Access-Control-Allow-Origin', '*');
     try {
-        const sql = neon(process.env.DATABASE_URL);
-        const { section } = request.query;
-
-        const query = section 
-            ? sql`SELECT * FROM posts WHERE section = ${section} ORDER BY created_at DESC`
-            : sql`SELECT * FROM posts ORDER BY created_at DESC`;
-
-        const data = await query;
+        // تم التحديث لاستخدام SUPABASE_URL
+        const sql = neon(process.env.SUPABASE_URL);
+        const data = await sql`SELECT * FROM posts ORDER BY created_at DESC`;
+        
         return response.status(200).json({ success: true, data });
     } catch (error) {
-        return response.status(500).json({ error: error.message });
+        console.error("GET ERROR:", error);
+        return response.status(500).json({ success: false, error: error.message });
     }
 }
