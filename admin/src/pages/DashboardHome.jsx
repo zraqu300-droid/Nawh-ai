@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   TrendingUp, 
   Database, 
@@ -16,10 +16,83 @@ import {
   ArrowLeftRight
 } from 'lucide-react';
 
+// استيراد ملف الخدمة المسؤول عن حفظ البيانات والـ API من المسار المحدد
+import apiService from '../services/apiService';
+
 export default function Dashboard() {
   const [activeType, setActiveType] = useState('Image');
+  
+  // حالات إدارة البيانات والمدخلات (Form States)
+  const [title, setTitle] = useState('');
+  const [url, setUrl] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  
+  // حالات النظام (System Status UI)
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  // كائنات الستايل المدمجة بديلة للـ CSS الخارجي
+  const fileInputRef = useRef(null);
+
+  // دالة التعامل مع اختيار ملف من الجهاز
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  // دالة إرسال وتمرير البيانات للـ API
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage('');
+    setIsSuccess(false);
+
+    // تجميع البيانات اعتماداً على نوع المحتوى المختار
+    // إذا كان يحتوي على ملفات حقيقية نستخدم FormData، وإلا نرسل كائن JSON عادي
+    try {
+      let payload;
+
+      if (selectedFile) {
+        payload = new FormData();
+        payload.append('type', activeType);
+        payload.append('title', title);
+        payload.append('description', description);
+        payload.append('url', url);
+        payload.append('file', selectedFile);
+      } else {
+        payload = {
+          type: activeType,
+          title: title,
+          url: url,
+          description: description
+        };
+      }
+
+      // تمرير البيانات مباشرة لملف الخدمة المسؤول عن الحفظ
+      // ملاحظة: تم افتراض اسم الدالة داخل الـ apiService كـ 'saveContent' أو 'uploadData'
+      // يمكنك تعديل اسم الدالة المستدعاة بحسب ما هو مكتوب داخل ملف الـ apiService لديك
+      const response = await apiService.saveContent(payload); 
+      
+      // في حال نجاح العملية
+      setIsSuccess(true);
+      // تصفير الاستمارة بعد الحفظ الناجح
+      setTitle('');
+      setUrl('');
+      setDescription('');
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
+    } catch (error) {
+      console.error("Error saving dynamic content:", error);
+      setErrorMessage(error.message || "فشل إرسال البيانات، تحقق من اتصال الشبكة والمتغيرات.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // كائنات الستايل المدمجة الأصلية دون تغيير في الهوية البصرية لضمان ثبات التصميم
   const styles = {
     container: {
       direction: 'rtl',
@@ -87,7 +160,7 @@ export default function Dashboard() {
       padding: '16px',
       display: 'flex',
       flexDirection: 'column',
-      itemsCenter: 'center',
+      alignItems: 'center',
       justifyContent: 'center',
       minWidth: '140px',
       textAlign: 'center',
@@ -200,6 +273,18 @@ export default function Dashboard() {
       fontSize: '12px',
       fontWeight: '600'
     },
+    successBox: {
+      backgroundColor: '#f0fff4',
+      border: '1px solid #c6f6d5',
+      color: '#22543d',
+      borderRadius: '12px',
+      padding: '12px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontSize: '12px',
+      fontWeight: '600'
+    },
     submitBtn: {
       width: '100%',
       background: 'linear-gradient(90deg, #1d52d4, #ff5722)',
@@ -210,7 +295,9 @@ export default function Dashboard() {
       borderRadius: '12px',
       fontSize: '13px',
       cursor: 'pointer',
-      boxShadow: '0 4px 6px rgba(0,0,0,0.15)'
+      boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
+      opacity: isLoading ? 0.7 : 1,
+      transition: 'opacity 0.2s'
     },
     leftSection: {
       display: 'flex',
@@ -233,7 +320,6 @@ export default function Dashboard() {
 
   return (
     <div style={styles.container}>
-      {/* تأثيرات الإضاءة النيونية الخلفية */}
       <div style={styles.glowTop}></div>
       <div style={styles.glowBottom}></div>
 
@@ -263,7 +349,6 @@ export default function Dashboard() {
 
         {/* كروت الإحصائيات الثلاثة العلوية */}
         <div style={styles.statsGrid}>
-          {/* الكارت الأول */}
           <div style={styles.statCard}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <p style={{ margin: 0, fontSize: '12px', color: '#a0aec0', fontWeight: '500' }}>إجمالي المستخدمين النشطين</p>
@@ -277,7 +362,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* الكارت الثاني */}
           <div style={styles.statCard}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <p style={{ margin: 0, fontSize: '12px', color: '#a0aec0', fontWeight: '500' }}>السجلات والبيانات المرفوعة</p>
@@ -291,7 +375,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* الكارت الثالث */}
           <div style={styles.statCard}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
               <p style={{ margin: 0, fontSize: '12px', color: '#a0aec0', fontWeight: '500' }}>حجم سعة قاعدة البيانات</p>
@@ -316,7 +399,7 @@ export default function Dashboard() {
         <div style={styles.mainLayout}>
           
           {/* اليمين: منصة نشر وإدارة المحتوى */}
-          <div style={styles.rightSection}>
+          <form onSubmit={handleSubmit} style={styles.rightSection}>
             <div style={styles.creatorHeader}>
               <ArrowLeftRight style={{ width: '16px', height: '16px', color: '#ffffff', transform: 'rotate(90deg)' }} />
               <h2 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#ffffff' }}>منصة نشر وإدارة المحتوى الذكي</h2>
@@ -325,38 +408,79 @@ export default function Dashboard() {
             <div style={styles.creatorBody}>
               <div style={{ textAlign: 'center' }}>
                 <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#1a202c' }}>نوع المحتوى المُراد نشره</h4>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#718096' }}>نوع المحتوى المُراد نشره</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#718096' }}>اختر التبويب واكتب البيانات ليتم معالجتها وحفظها فورياً</p>
               </div>
 
               {/* أزرار الاختيار الخمسة */}
               <div style={styles.typeSelectorGrid}>
-                <button type="button" onClick={() => setActiveType('Files')} style={styles.typeBtn(activeType === 'Files')}>
+                <button type="button" onClick={() => { setActiveType('Files'); setErrorMessage(''); }} style={styles.typeBtn(activeType === 'Files')}>
                   <FileText style={{ width: '20px', height: '20px', color: '#4299e1', marginBottom: '6px' }} />
                   <span style={{ fontSize: '11px' }}>Files</span>
                 </button>
-                <button type="button" onClick={() => setActiveType('Image')} style={styles.typeBtn(activeType === 'Image')}>
+                <button type="button" onClick={() => { setActiveType('Image'); setErrorMessage(''); }} style={styles.typeBtn(activeType === 'Image')}>
                   <ImageIcon style={{ width: '20px', height: '20px', color: '#805ad5', marginBottom: '6px' }} />
                   <span style={{ fontSize: '11px' }}>Image</span>
                 </button>
-                <button type="button" onClick={() => setActiveType('Video')} style={styles.typeBtn(activeType === 'Video')}>
+                <button type="button" onClick={() => { setActiveType('Video'); setErrorMessage(''); }} style={styles.typeBtn(activeType === 'Video')}>
                   <Video style={{ width: '20px', height: '20px', color: '#3182ce', marginBottom: '6px' }} />
                   <span style={{ fontSize: '11px' }}>Video</span>
                 </button>
-                <button type="button" onClick={() => setActiveType('Mixed')} style={styles.typeBtn(activeType === 'Mixed')}>
+                <button type="button" onClick={() => { setActiveType('Mixed'); setErrorMessage(''); }} style={styles.typeBtn(activeType === 'Mixed')}>
                   <Layers style={{ width: '20px', height: '20px', color: '#dd6b20', marginBottom: '6px' }} />
                   <span style={{ fontSize: '11px' }}>Mixed</span>
                 </button>
-                <button type="button" onClick={() => setActiveType('URL')} style={styles.typeBtn(activeType === 'URL')}>
+                <button type="button" onClick={() => { setActiveType('URL'); setErrorMessage(''); }} style={styles.typeBtn(activeType === 'URL')}>
                   <LinkIcon style={{ width: '20px', height: '20px', color: '#319795', marginBottom: '6px' }} />
                   <span style={{ fontSize: '11px' }}>URL</span>
                 </button>
               </div>
 
-              {/* حقول المدخلات */}
+              {/* حقول المدخلات الذكية والمتغيرة حسب اختيار الـ Tab */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <input type="text" placeholder="اكتب عنوان المحتوى أو المقالة هنا..." style={styles.inputStyle} />
-                <input type="text" placeholder="أدخل رابط الصورة أو الفيديو (URL)..." style={styles.inputStyle} />
-                <textarea rows="3" placeholder="اكتب تفاصيل الموضوع أو النص السردي هنا..." style={{ ...styles.inputStyle, resize: 'none' }}></textarea>
+                
+                {/* حقل العنوان يظهر لجميع الحالات باستثناء الروابط المباشرة السريعة في حال رغبت بذلك */}
+                <input 
+                  type="text" 
+                  placeholder={activeType === 'Files' ? "اكتب اسم الملف أو عنوان المرفق..." : "اكتب عنوان المحتوى أو المقالة هنا..."} 
+                  style={styles.inputStyle} 
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                />
+                
+                {/* حقل رفع الملفات الحقيقي للجهاز يظهر عند اختيار Files أو Image أو Video أو Mixed */}
+                {activeType !== 'URL' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>رفع ملف حقيقي من الجهاز (اختياري):</label>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      style={styles.inputStyle}
+                      accept={activeType === 'Image' ? "image/*" : activeType === 'Video' ? "video/*" : "*"}
+                    />
+                  </div>
+                )}
+
+                {/* حقل الروابط المباشرة (URL) يظهر دائماً أو عند اختيار تبويب الروابط والمقالات المركبة */}
+                {(activeType === 'URL' || activeType === 'Image' || activeType === 'Video' || activeType === 'Mixed') && (
+                  <input 
+                    type="url" 
+                    placeholder="أدخل رابط خارجي احتياطي أو أساسي للميديا (URL)..." 
+                    style={styles.inputStyle} 
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                  />
+                )}
+
+                {/* حقل النص الطويل أو المقالة المستقلة */}
+                <textarea 
+                  rows="3" 
+                  placeholder="اكتب تفاصيل الموضوع، المقال، أو الوصف السردي هنا..." 
+                  style={{ ...styles.inputStyle, resize: 'none' }}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                ></textarea>
               </div>
 
               {/* النقاط السفلية (Pagination Dots) */}
@@ -366,18 +490,33 @@ export default function Dashboard() {
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#cbd5e0' }}></span>
               </div>
 
-              {/* شريط رسالة الخطأ */}
-              <div style={styles.errorBox}>
-                <span style={{ cursor: 'pointer', opacity: 0.6 }}>✕</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>فشل إرسال البيانات، تحقق من اتصال الشبكة والمتغيرات.</span>
-                  <AlertCircle style={{ width: '16px', height: '16px', color: '#e53e3e' }} />
+              {/* شريط رسالة النجاح الحقيقية */}
+              {isSuccess && (
+                <div style={styles.successBox}>
+                  <span style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => setIsSuccess(false)}>✕</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>تم حفظ ونشر البيانات بنجاح في السيرفر المركزي الحقيقي!</span>
+                    <CheckCircle2 style={{ width: '16px', height: '16px', color: '#38a169' }} />
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <button type="button" style={styles.submitBtn}>التالي</button>
+              {/* شريط رسالة الخطأ في حال حدوث عطل في الـ API */}
+              {errorMessage && (
+                <div style={styles.errorBox}>
+                  <span style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => setErrorMessage('')}>✕</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{errorMessage}</span>
+                    <AlertCircle style={{ width: '16px', height: '16px', color: '#e53e3e' }} />
+                  </div>
+                </div>
+              )}
+
+              <button type="submit" disabled={isLoading} style={styles.submitBtn}>
+                {isLoading ? 'جاري معالجة وحفظ البيانات...' : 'نشر وحفظ الآن'}
+              </button>
             </div>
-          </div>
+          </form>
 
           {/* اليسار: كروت الإجراءات والنشاطات الأخيرة المدمجة بالكامل */}
           <div style={styles.leftSection}>
@@ -385,13 +524,17 @@ export default function Dashboard() {
             {/* كارت العمليات السريعة */}
             <div style={styles.lightCard}>
               <div style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 'bold', trackingWith: '1px', color: '#718096', display: 'block', textTransform: 'uppercase' }}>Quick Actions</span>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#718096', display: 'block', textTransform: 'uppercase' }}>Quick Actions</span>
                 <h3 style={{ margin: '2px 0 0 0', fontSize: '14px', fontWeight: 'bold', color: '#2d3748' }}>الإجراءات والعمليات السريعة</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <button type="button" style={{ width: '100%', background: 'linear-gradient(90deg, #3d7cff, #ff763b)', color: '#ffffff', border: 'none', fontWeight: '600', padding: '12px', borderRadius: '12px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ width: '100%', background: 'linear-gradient(90deg, #3d7cff, #ff763b)', color: '#ffffff', border: 'none', fontWeight: '600', padding: '12px', borderRadius: '12px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
                   <Upload style={{ width: '16px', height: '16px' }} />
-                  Upload File
+                  Upload File Direct
                 </button>
                 <button type="button" style={{ width: '100%', backgroundColor: '#edf2f7', border: '1px solid #cbd5e0', color: '#4a5568', fontWeight: '600', padding: '12px', borderRadius: '12px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <RefreshCw style={{ width: '16px', height: '16px' }} />
@@ -403,7 +546,7 @@ export default function Dashboard() {
             {/* كارت الأنشطة الأخيرة */}
             <div style={styles.lightCard}>
               <div style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 'bold', trackingWith: '1px', color: '#718096', display: 'block', textTransform: 'uppercase' }}>Recent Activity</span>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#718096', display: 'block', textTransform: 'uppercase' }}>Recent Activity</span>
                 <h3 style={{ margin: '2px 0 0 0', fontSize: '14px', fontWeight: 'bold', color: '#2d3748' }}>آخر النشاطات الحية والنظام</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -428,9 +571,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* زر المساعدة العائم الثابت أسفل اليسار */}
+      {/* زر المساعدة العائم */}
       <div style={{ position: 'fixed', bottom: '20px', left: '20px', zIndex: 50 }}>
-        <button type="button" style={{ width: '40px', height: '40px', backgroundColor: '#161b26', border: '1px solid #222938', color: '#a0aec0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifycontent: 'center', cursor: 'pointer', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button type="button" style={{ width: '40px', height: '40px', backgroundColor: '#161b26', border: '1px solid #222938', color: '#a0aec0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
           <HelpCircle style={{ width: '20px', height: '20px' }} />
         </button>
       </div>
