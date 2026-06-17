@@ -1,9 +1,11 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-// استيراد الصفحات والهيكل الخارجي
+// استيراد الهيكل الخارجي من المسار القديم
 import AdminLayout from './bage/AdminLayout';
-import DashboardHome from './bage/DashboardHome';
+
+// الاستيراد من المسار الجديد: admin/src/pages/DashboardHome
+import DashboardHome from './pages/DashboardHome';
 
 function App() {
   return (
