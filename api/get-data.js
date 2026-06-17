@@ -1,59 +1,19 @@
-import pg from 'pg';
+import { neon } from '@neondatabase/serverless';
 
-const { Pool } = pg;
+export default async function handler(request, response) {
+    if (request.method !== 'GET') return response.status(405).end();
+    
+    try {
+        const sql = neon(process.env.DATABASE_URL);
+        const { section } = request.query;
 
-// تم تحديث المتغير إلى SUPABASE_URL ليتوافق مع إعدادات Vercel لديك
-const pool = new Pool({
-  connectionString: process.env.SUPABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+        const query = section 
+            ? sql`SELECT * FROM posts WHERE section = ${section} ORDER BY created_at DESC`
+            : sql`SELECT * FROM posts ORDER BY created_at DESC`;
 
-export default async function handler(req, res) {
-  // تفعيل الـ CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Content-Type', 'application/json');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
-  try {
-    // استخراج الفلاتر (Query Parameters)
-    const formNameFilter = req.query.form_name;
-
-    let query = '';
-    let values = [];
-
-    if (formNameFilter) {
-      query = `
-        SELECT id, form_name, payload, created_at 
-        FROM dynamic_payloads 
-        WHERE form_name = $1 
-        ORDER BY created_at DESC;
-      `;
-      values = [formNameFilter];
-    } else {
-      query = `
-        SELECT id, form_name, payload, created_at 
-        FROM dynamic_payloads 
-        ORDER BY created_at DESC;
-      `;
+        const data = await query;
+        return response.status(200).json({ success: true, data });
+    } catch (error) {
+        return response.status(500).json({ error: error.message });
     }
-
-    const result = await pool.query(query, values);
-
-    return res.status(200).json({
-      success: true,
-      count: result.rows.length,
-      data: result.rows,
-    });
-
-  } catch (error) {
-    return res.status(500).json({ error: error.message || 'Internal Server Error' });
-  }
 }
