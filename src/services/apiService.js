@@ -8,7 +8,6 @@ const BASE_URL = 'https://nawh-ai.vercel.app/api';
 export const getDynamicDataService = async (section = '') => {
   let url = `${BASE_URL}/get-data`;
   
-  // إضافة الفلتر إلى الرابط كـ Query Parameter
   if (section) {
     url += `?section=${encodeURIComponent(section)}`;
   }
@@ -21,7 +20,7 @@ export const getDynamicDataService = async (section = '') => {
   try {
     const response = await CapacitorHttp.get(options);
     if (response.status === 200) {
-      return response.data; // النتيجة في response.data.data
+      return response.data; 
     } else {
       throw new Error(`Failed to fetch data. Status: ${response.status}`);
     }
@@ -33,12 +32,13 @@ export const getDynamicDataService = async (section = '') => {
 
 /**
  * خدمة حفظ البيانات باستخدام CapacitorHttp
+ * تم استبدال الرابط ليطابق هيكلية الجلب (save-data)
  */
 export const saveDynamicDataService = async (payload) => {
   const options = {
-    url: `${BASE_URL}/save-data`,
+    url: `${BASE_URL}/save-data`, // الرابط كما هو مطلوب للحفظ
     headers: { 'Content-Type': 'application/json' },
-    data: payload // payload يجب أن يحتوي على {type, title, content, section, metadata}
+    data: payload 
   };
 
   try {
