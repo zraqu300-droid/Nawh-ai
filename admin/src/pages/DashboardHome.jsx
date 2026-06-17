@@ -1,80 +1,78 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-// ستحتاج إلى تثبيت هذه المكتبة:
-// npm install @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons
+// تأكد من تثبيت الـ Icons عبر: npm install @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFile, faImage, faPlayCircle, faLink, faExchangeAlt, faExclamationTriangle, faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
-// ستحتاج إلى تثبيت هذه المكتبة لمؤشر التقدم:
-// npm install react-circular-progressbar
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
+import { 
+  faFile, faImage, faVideo, faLink, faExchangeAlt, 
+  faExclamationTriangle, faQuestionCircle, faSync, faUpload, faCheckCircle, faInfoCircle 
+} from '@fortawesome/free-solid-svg-icons';
 
-// --- الأنماط المشتركة والخاصة ---
+// --- الأنماط والتصميم (Styled Components) ---
 
 const Container = styled.div`
-  background-color: #1a1e36; /* لون خلفية داكن مشابه للصورة */
-  background-image: radial-gradient(circle at 10% 10%, #6e00ff 0%, transparent 40%),
-                    radial-gradient(circle at 90% 90%, #ff00de 0%, transparent 40%);
+  background-color: #0e111a; 
+  background-image: radial-gradient(circle at 5% 20%, rgba(110, 0, 255, 0.15) 0%, transparent 50%),
+                    radial-gradient(circle at 95% 80%, rgba(255, 0, 222, 0.1) 0%, transparent 50%);
   color: #fff;
   min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* أو أي خط عربي مناسب */
-  padding: 40px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 30px;
   box-sizing: border-box;
+  direction: rtl; /* لدعم الواجهة العربية بشكل صحيح */
+`;
+
+const MainGrid = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 20px;
 `;
 
 const HeaderBanner = styled.div`
   width: 100%;
-  max-width: 1200px;
-  background: linear-gradient(90deg, #3d7cff 0%, #ff763b 100%);
-  border-radius: 12px;
-  padding: 20px 30px;
+  background: linear-gradient(90deg, #1d52d4 0%, #ff5722 100%);
+  border-radius: 14px;
+  padding: 20px 25px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 `;
 
 const HeaderText = styled.div`
   display: flex;
   flex-direction: column;
+  gap: 5px;
 `;
 
 const HeaderTitle = styled.h1`
   margin: 0;
-  font-size: 2.2rem;
-  font-weight: bold;
+  font-size: 1.6rem;
+  font-weight: 700;
 `;
 
 const HeaderSubtitle = styled.p`
-  margin: 5px 0 0 0;
-  opacity: 0.9;
-  font-size: 1.1rem;
-`;
-
-const StarIcon = styled.div`
-  font-size: 1.8rem;
-  color: #a8dfff;
+  margin: 0;
+  opacity: 0.85;
+  font-size: 0.95rem;
 `;
 
 const LogoSection = styled.div`
-  background-color: #2a314b;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
   border-radius: 10px;
-  padding: 10px;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
   gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 `;
 
-const LogoImage = styled.img`
-  width: 40px;
-  height: 40px;
-`;
-
-const LogoText = styled.div`
+const LogoText = styled.span`
   font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
 `;
 
 const StatsGrid = styled.div`
@@ -82,444 +80,543 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   width: 100%;
-  max-width: 1200px;
-  margin-bottom: 30px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const StatCard = styled.div`
-  background-color: #2a314b;
+  background-color: #161b26;
+  border: 1px solid #222938;
   border-radius: 12px;
-  padding: 25px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  position: relative;
+  justify-content: space-between;
+`;
+
+const StatHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
 `;
 
 const StatTitle = styled.h3`
-  margin: 0 0 10px 0;
-  font-size: 1rem;
-  opacity: 0.8;
-  color: #fff;
-`;
-
-const StatValueContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 10px;
+  margin: 0;
+  font-size: 0.95rem;
+  color: #a0aec0;
+  font-weight: 500;
 `;
 
 const StatIconBox = styled.div`
-  background: linear-gradient(135deg, #4f7fff 0%, #15d6c8 100%);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  padding: 10px;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 1.2rem;
+  color: #3d7cff;
 `;
 
-const StatNumber = styled.span`
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #fff;
+const StatNumber = styled.div`
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 5px;
 `;
 
 const StatGains = styled.span`
-  font-size: 0.9rem;
-  color: ${props => props.color || '#66ff7c'};
+  font-size: 0.85rem;
+  color: ${props => props.up ? '#48bb78' : '#a0aec0'};
 `;
 
-const ContentCreatorSection = styled.div`
+const ProgressTrack = styled.div`
+  width: 100%;
+  height: 6px;
+  background-color: #2d3748;
+  border-radius: 3px;
+  margin-top: 10px;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div`
+  width: 28%;
+  height: 100%;
+  background: linear-gradient(90deg, #6e00ff, #ff00de);
+`;
+
+const ContentLayout = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 20px;
   width: 100%;
-  max-width: 1200px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
-const CreatorMainCard = styled.div`
-  background-color: #2a314b;
+const CreatorCard = styled.div`
+  background-color: #161b26;
+  border: 1px solid #222938;
   border-radius: 12px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 `;
 
 const CreatorHeader = styled.div`
-  background: linear-gradient(90deg, #3d7cff 0%, #ff763b 100%);
-  padding: 15px 30px;
-  color: #fff;
-  font-weight: bold;
-  font-size: 1.1rem;
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const ShareIconWrapper = styled.div`
+  background: linear-gradient(90deg, #2b3595 0%, #d44b1d 100%);
+  padding: 12px 20px;
+  font-weight: 600;
   font-size: 1rem;
-  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const CreatorBody = styled.div`
-  padding: 30px;
+  padding: 25px;
   display: flex;
   flex-direction: column;
   gap: 15px;
 `;
 
-const TypeSelector = styled.div`
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+const SectionCentering = styled.div`
+  text-align: center;
+  margin-bottom: 10px;
 `;
 
-const TypeButton = styled.div`
-  flex: 1;
-  background-color: ${props => props.active ? '#4a5682' : '#333c5e'};
+const SectionMainTitle = styled.h2`
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+`;
+
+const SectionSubTitle = styled.p`
+  margin: 4px 0 0 0;
+  font-size: 0.9rem;
+  color: #a0aec0;
+`;
+
+const TypeSelector = styled.div`
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+  direction: ltr; /* للحفاظ على ترتيب الأزرار الإنجليزية كما بالصورة */
+`;
+
+const TypeButton = styled.button`
+  background-color: ${props => props.active ? '#1e2538' : '#111520'};
   color: #fff;
-  border-radius: 8px;
-  padding: 15px;
+  border: 1px solid ${props => props.active ? '#533bfe' : '#222938'};
+  border-radius: 10px;
+  padding: 12px 5px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
   cursor: pointer;
-  border: ${props => props.active ? '1px solid #7138e6' : '1px solid transparent'};
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #533bfe;
+  }
+`;
+
+const IconWrapper = styled.div`
+  font-size: 1.2rem;
+  color: ${props => props.iconColor || '#fff'};
 `;
 
 const Input = styled.input`
   width: 100%;
-  background-color: #f1f3f6;
-  border: 1px solid #e0e6ed;
-  border-radius: 6px;
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   padding: 12px 15px;
-  color: #1a1e36;
-  font-size: 1rem;
+  color: #1a202c;
+  font-size: 0.95rem;
   box-sizing: border-box;
+  outline: none;
+  text-align: right;
+
   &::placeholder {
-    color: #9da3ba;
+    color: #a0aec0;
   }
 `;
 
 const Textarea = styled.textarea`
   width: 100%;
-  background-color: #f1f3f6;
-  border: 1px solid #e0e6ed;
-  border-radius: 6px;
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   padding: 12px 15px;
-  color: #1a1e36;
-  font-size: 1rem;
+  color: #1a202c;
+  font-size: 0.95rem;
   box-sizing: border-box;
   min-height: 100px;
-  resize: vertical;
+  resize: none;
+  outline: none;
+  text-align: right;
+
   &::placeholder {
-    color: #9da3ba;
+    color: #a0aec0;
   }
 `;
 
-const ActionButton = styled.button`
+const DotsContainer = styled.div`
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 5px 0;
+`;
+
+const Dot = styled.div`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: ${props => props.active ? '#fff' : '#4a5568'};
+`;
+
+const ErrorBanner = styled.div`
+  background-color: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 8px;
+  padding: 12px 15px;
+  color: #c53030;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+`;
+
+const SubmitButton = styled.button`
   width: 100%;
+  background: linear-gradient(90deg, #1d52d4 0%, #ff5722 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+`;
+
+const SidebarLogs = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const LightCard = styled.div`
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  color: #1a202c;
+`;
+
+const LightCardTitleBlock = styled.div`
+  text-align: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 12px;
+  margin-bottom: 15px;
+`;
+
+const LightCardTitleEN = styled.div`
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+`;
+
+const LightCardTitleAR = styled.div`
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+`;
+
+const QuickActionsGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const PrimaryActionButton = styled.button`
   background: linear-gradient(90deg, #3d7cff 0%, #ff763b 100%);
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 12px;
-  font-size: 1.1rem;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 `;
 
-const QuickActionsCard = styled.div`
-  background-color: #f1f3f6; /* خلفية فاتحة */
-  border-radius: 12px;
-  padding: 25px;
+const SecondaryActionButton = styled.button`
+  background-color: #edf2f7;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover {
+    background-color: #e2e8f0;
+  }
+`;
+
+const ActivityList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  color: #1a1e36;
-`;
-
-const QuickActionButton = styled.button`
-  background: ${props => props.primary ? 'linear-gradient(135deg, #3d7cff 0%, #ff763b 100%)' : '#e0e6ed'};
-  color: ${props => props.primary ? '#fff' : '#1a1e36'};
-  border: ${props => props.primary ? 'none' : '1px solid #d0d7de'};
-  border-radius: 6px;
-  padding: 10px;
-  font-size: 1rem;
-  font-weight: ${props => props.primary ? 'bold' : 'normal'};
-  cursor: pointer;
-`;
-
-const RecentActivityCard = styled.div`
-  background-color: #f1f3f6;
-  border-radius: 12px;
-  padding: 25px;
-  color: #1a1e36;
 `;
 
 const ActivityItem = styled.div`
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e0e6ed;
-  padding: 15px 0;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf2f7;
+
   &:last-child {
     border-bottom: none;
   }
 `;
 
-const ActivityInfo = styled.div`
+const ActivityLeft = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d3748;
 `;
 
-const ActivityStatus = styled.div`
-  color: ${props => props.color || '#1a1e36'};
+const ActivityTime = styled.span`
+  font-size: 0.8rem;
+  color: #718096;
 `;
 
-const ErrorBanner = styled.div`
-  background-color: #ffcccc;
-  border: 1px solid #ff9999;
-  border-radius: 8px;
-  padding: 15px;
-  color: #cc0000;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-`;
-
-const DatabaseSizeChart = styled.div`
-  width: 80px;
-  height: 80px;
-`;
-
-const PaginatorDots = styled.div`
-  display: flex;
-  gap: 5px;
-  justify-content: center;
-  margin-top: 10px;
-`;
-
-const PaginatorDot = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: ${props => props.active ? '#fff' : '#4a5682'};
-`;
-
-const HelpButton = styled.button`
+const FloatingHelp = styled.div`
   position: fixed;
   bottom: 20px;
   left: 20px;
-  background-color: #2a314b;
-  color: #fff;
-  border: none;
+  background-color: #161b26;
+  border: 1px solid #222938;
+  color: #a0aec0;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+
+  &:hover {
+    color: #fff;
+  }
 `;
 
-// --- مكوّن التطبيق الرئيسي ---
+// --- المكون الرئيسي للملف ---
 
-const App = () => {
+export default function DashboardHome() {
+  const [activeType, setActiveType] = useState('Image');
+
   return (
     <Container>
-      {/* 1. شعار الواجهة والترحيب */}
-      <HeaderBanner>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <StarIcon><FontAwesomeIcon icon={faPlayCircle} /></StarIcon>
+      <MainGrid>
+        
+        {/* 1. البانر العلوي */}
+        <HeaderBanner>
           <HeaderText>
             <HeaderTitle>لوحة التحكم المركزية</HeaderTitle>
             <HeaderSubtitle>مرحباً بك في قلب نظام nawh.ai النبضي</HeaderSubtitle>
           </HeaderText>
-        </div>
-        <LogoSection>
-          <LogoImage src="nawhai_logo_path.png" alt="logo" /> {/* ضع مسار الشعار هنا */}
-          <LogoText>nawh.ai</LogoText>
-        </LogoSection>
-      </HeaderBanner>
+          <LogoSection>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#ff763b" stroke="#3d7cff" strokeWidth="2" strokeLinejoin="round"/>
+            </svg>
+            <LogoText>nawh.ai</LogoText>
+          </LogoSection>
+        </HeaderBanner>
 
-      {/* 2. بطاقات الإحصائيات */}
-      <StatsGrid>
-        <StatCard>
-          <StatTitle>إجمالي المستخدمين النشطين</StatTitle>
-          <StatValueContainer>
-            <StatIconBox><FontAwesomeIcon icon={faFile} /></StatIconBox>
-            <StatNumber>1,248</StatNumber>
-          </StatValueContainer>
-          <StatGains>+12% this week</StatGains>
-        </StatCard>
-        <StatCard>
-          <StatTitle>السجلات والبيانات المرفوعة</StatTitle>
-          <StatValueContainer>
-            <StatIconBox><FontAwesomeIcon icon={faPlayCircle} /></StatIconBox>
-            <StatNumber>84,512</StatNumber>
-          </StatValueContainer>
-          <StatGains>+5.4% Sycned</StatGains>
-        </StatCard>
-        <StatCard style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <StatTitle>حجم سعة قاعدة البيانات</StatTitle>
-            <StatNumber>14.2 GB</StatNumber>
-            <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.7, marginTop: '10px', color: '#fff' }}>
-              <span>28% used</span>
-              <span>of 50GB</span>
+        {/* 2. كروت الإحصائيات الثلاثة */}
+        <StatsGrid>
+          <StatCard>
+            <StatHeader>
+              <StatTitle>إجمالي المستخدمين النشطين</StatTitle>
+              <StatIconBox>
+                <FontAwesomeIcon icon={faExchangeAlt} style={{transform: 'rotate(45deg)'}} />
+              </StatIconBox>
+            </StatHeader>
+            <div>
+              <StatNumber>1,248</StatNumber>
+              <StatGains up>+12% this week</StatGains>
             </div>
-          </div>
-          <DatabaseSizeChart>
-            <CircularProgressbar
-              value={28}
-              strokeWidth={15}
-              styles={buildStyles({
-                rotation: 0.25,
-                strokeLinecap: 'butt',
-                pathColor: '#533bfe',
-                trailColor: '#e0e6ed33',
-              })}
-            />
-          </DatabaseSizeChart>
-        </StatCard>
-      </StatsGrid>
+          </StatCard>
 
-      {/* 3. منطقة منشئ المحتوى والأنشطة الأخيرة */}
-      <ContentCreatorSection>
-        {/* منشئ المحتوى */}
-        <CreatorMainCard>
-          <CreatorHeader>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <ShareIconWrapper><FontAwesomeIcon icon={faExchangeAlt} rotation={90} /></ShareIconWrapper>
+          <StatCard>
+            <StatHeader>
+              <StatTitle>السجلات والبيانات المرفوعة</StatTitle>
+              <StatIconBox>
+                <FontAwesomeIcon icon={faExchangeAlt} style={{transform: 'rotate(-45deg)'}} />
+              </StatIconBox>
+            </StatHeader>
+            <div>
+              <StatNumber>84,512</StatNumber>
+              <StatGains up>+5.4% Synced</StatGains>
+            </div>
+          </StatCard>
+
+          <StatCard>
+            <StatHeader>
+              <StatTitle>حجم سعة قاعدة البيانات</StatTitle>
+              <StatIconBox style={{color: '#ff763b'}}>
+                <FontAwesomeIcon icon={faFile} />
+              </StatIconBox>
+            </StatHeader>
+            <div>
+              <StatNumber>14.2 GB</StatNumber>
+              <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#a0aec0'}}>
+                <span>28% used</span>
+                <span>of 50GB</span>
+              </div>
+              <ProgressTrack>
+                <ProgressFill />
+              </ProgressTrack>
+            </div>
+          </StatCard>
+        </StatsGrid>
+
+        {/* 3. القسم السفلي المنقسم */}
+        <ContentLayout>
+          
+          {/* اليمين: منصة النشر */}
+          <CreatorCard>
+            <CreatorHeader>
+              <FontAwesomeIcon icon={faExchangeAlt} style={{transform: 'rotate(90deg)'}} />
               <span>منصة نشر وإدارة المحتوى الذكي</span>
-            </div>
-          </CreatorHeader>
-          <CreatorBody>
-            <div style={{textAlign: 'center', marginBottom: '15px'}}>
-              <HeaderTitle style={{fontSize: '1.2rem'}}>نوع المحتوى المُراد نشره</HeaderTitle>
-              <HeaderSubtitle style={{fontSize: '1rem', color: '#fff', opacity: 1}}>نوع المحتوى المُراد نشره</HeaderSubtitle>
-            </div>
-            <TypeSelector>
-              <TypeButton>
-                <FontAwesomeIcon icon={faFile} style={{fontSize: '1.5rem', color: '#15d6c8'}} />
-                <span>Files</span>
-              </TypeButton>
-              <TypeButton active>
-                <FontAwesomeIcon icon={faImage} style={{fontSize: '1.5rem', color: '#7138e6'}} />
-                <span>Image</span>
-              </TypeButton>
-              <TypeButton>
-                <FontAwesomeIcon icon={faPlayCircle} style={{fontSize: '1.5rem', color: '#3d7cff'}} />
-                <span>Video</span>
-              </TypeButton>
-              <TypeButton>
-                <FontAwesomeIcon icon={faExchangeAlt} style={{fontSize: '1.5rem', color: '#ff763b'}} />
-                <span>Mixed</span>
-              </TypeButton>
-              <TypeButton>
-                <FontAwesomeIcon icon={faLink} style={{fontSize: '1.5rem', color: '#b6f8ff'}} />
-                <span>URL</span>
-              </TypeButton>
-            </TypeSelector>
-            <Input type="text" placeholder="اكتب عنوان المحتوى أو المقالة هنا..." />
-            <Input type="text" placeholder="أدخل رابط الصورة أو الفيديو (URL)..." />
-            <Textarea placeholder="اكتب تفاصيل الموضوع أو النص السردي هنا..." />
-            <PaginatorDots>
-              <PaginatorDot active />
-              <PaginatorDot />
-              <PaginatorDot />
-            </PaginatorDots>
-            <ErrorBanner>
-              <FontAwesomeIcon icon={faExclamationTriangle} />
-              <span>&times; فشل إرسال البيانات، تحقق من اتصال الشبكة والمتغيرات.</span>
-            </ErrorBanner>
-            <ActionButton>التالي</ActionButton>
-          </CreatorBody>
-        </CreatorMainCard>
+            </CreatorHeader>
+            
+            <CreatorBody>
+              <SectionCentering>
+                <SectionMainTitle>نوع المحتوى المُراد نشره</SectionMainTitle>
+                <SectionSubTitle>نوع المحتوى المُراد نشره</SectionSubTitle>
+              </SectionCentering>
 
-        {/* الإجراءات السريعة والأنشطة الأخيرة */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <QuickActionsCard>
-            <h3 style={{ margin: 0, fontSize: '1rem', textAlign: 'center', borderBottom: '1px solid #e0e6ed', paddingBottom: '10px' }}>Quick Actionsتفضل، هذا هو كود React لإنشاء صفحة تشبه اللوحة التي قدمتها في الصورة:
+              <TypeSelector>
+                <TypeButton active={activeType === 'Files'} onClick={() => setActiveType('Files')}>
+                  <IconWrapper iconColor="#4299e1"><FontAwesomeIcon icon={faFile} /></IconWrapper>
+                  <span>Files</span>
+                </TypeButton>
+                <TypeButton active={activeType === 'Image'} onClick={() => setActiveType('Image')}>
+                  <IconWrapper iconColor="#805ad5"><FontAwesomeIcon icon={faImage} /></IconWrapper>
+                  <span>Image</span>
+                </TypeButton>
+                <TypeButton active={activeType === 'Video'} onClick={() => setActiveType('Video')}>
+                  <IconWrapper iconColor="#3182ce"><FontAwesomeIcon icon={faVideo} /></IconWrapper>
+                  <span>Video</span>
+                </TypeButton>
+                <TypeButton active={activeType === 'Mixed'} onClick={() => setActiveType('Mixed')}>
+                  <IconWrapper iconColor="#dd6b20"><FontAwesomeIcon icon={faExchangeAlt} /></IconWrapper>
+                  <span>Mixed</span>
+                </TypeButton>
+                <TypeButton active={activeType === 'URL'} onClick={() => setActiveType('URL')}>
+                  <IconWrapper iconColor="#319795"><FontAwesomeIcon icon={faLink} /></IconWrapper>
+                  <span>URL</span>
+                </TypeButton>
+              </TypeSelector>
 
-```javascript
-import React, { Component } from 'react';
+              <Input type="text" placeholder="اكتب عنوان المحتوى أو المقالة هنا..." />
+              <Input type="text" placeholder="أدخل رابط الصورة أو الفيديو (URL)..." />
+              <Textarea placeholder="اكتب تفاصيل الموضوع أو النص السردي هنا..." />
 
-class Dashboard extends Component {
-  render() {
-    return (
-      <div className="container">
-        <div className="header">
-          <h1>لوحة التحكم المركزية</h1>
-          <p>مرحباً بك في قلب نظام nowh.ol النبضي</p>
-          <div className="header-right">
-            <span>4 nowh.ol</span>
-          </div>
-        </div>
-        <div className="top-tiles">
-          <div className="tile">
-            <h2>إجمالي المستخدمين النشطين</h2>
-            <p>1,248</p>
-            <p>+12% this week</p>
-          </div>
-          <div className="tile">
-            <h2>السجلات والبيانات المرفوعة</h2>
-            <p>84,512</p>
-            <p>+5.4% Synced</p>
-          </div>
-          <div className="tile">
-            <h2>حجم سعة قاعدة البيانات</h2>
-            <p>14.2 GB</p>
-            <p>28% used of 50GB</p>
-          </div>
-        </div>
-        <div className="middle-section">
-          <div className="content-creation">
-            <h3>منصة نشر وإدارة المحتوى الذكي</h3>
-            <p>نوع المحتوى المُراد نشره</p>
-            <div className="content-types">
-              <button>Files</button>
-              <button>Image</button>
-              <button>Video</button>
-              <button>Mixed</button>
-              <button>URL</button>
-            </div>
-            <input type="text" placeholder="اكتب عنوان المحتوى أو المقال هنا..." />
-            <input type="text" placeholder="ادخل رابط الصورة أو الفيديو (URL)..." />
-            <textarea placeholder="اكتب تفاصيل الموضوع أو النص السردي هنا..."></textarea>
-            <button>التالي</button>
-          </div>
-          <div className="quick-actions">
-            <h3>Quick Actions</h3>
-            <h3>الإجراءات والعمليات السريعة</h3>
-            <button>Upload File</button>
-            <button>Refresh Server</button>
-          </div>
-        </div>
-        <div className="recent-activity">
-          <h3>Recent Activity</h3>
-          <h3>آخر النشاطات الحية والنظام</h3>
-          <ul>
-            <li>APK Build Success 13:53 PM</li>
-            <li>Config Updated 13:53 PM</li>
-          </ul>
-        </div>
-        <div className="help">
-          <button>?</button>
-        </div>
-      </div>
-    );
-  }
+              <DotsContainer>
+                <Dot active />
+                <Dot />
+                <Dot />
+              </DotsContainer>
+
+              <ErrorBanner>
+                <FontAwesomeIcon icon={faExclamationTriangle} style={{fontSize: '1.1rem'}} />
+                <span>فشل إرسال البيانات، تحقق من اتصال الشبكة والمتغيرات.</span>
+              </ErrorBanner>
+
+              <SubmitButton>التالي</SubmitButton>
+            </CreatorBody>
+          </CreatorCard>
+
+          {/* اليسار: العمليات السريعة والنشاطات الأخيرة (خلفية بيضاء) */}
+          <SidebarLogs>
+            
+            {/* العمليات السريعة */}
+            <LightCard>
+              <LightCardTitleBlock>
+                <LightCardTitleEN>Quick Actions</LightCardTitleEN>
+                <LightCardTitleAR>الإجراءات والعمليات السريعة</LightCardTitleAR>
+              </LightCardTitleBlock>
+              <QuickActionsGrid>
+                <PrimaryActionButton>
+                  <FontAwesomeIcon icon={faUpload} />
+                  <span>Upload File</span>
+                </PrimaryActionButton>
+                <SecondaryActionButton>
+                  <FontAwesomeIcon icon={faSync} />
+                  <span>Refresh Server</span>
+                </SecondaryActionButton>
+              </QuickActionsGrid>
+            </LightCard>
+
+            {/* الأنشطة الأخيرة */}
+            <LightCard>
+              <LightCardTitleBlock>
+                <LightCardTitleEN>Recent Activity</LightCardTitleEN>
+                <LightCardTitleAR>آخر النشاطات الحية والنظام</LightCardTitleAR>
+              </LightCardTitleBlock>
+              <ActivityList>
+                <ActivityItem>
+                  <ActivityLeft>
+                    <FontAwesomeIcon icon={faCheckCircle} style={{color: '#48bb78'}} />
+                    <span>APK Build Success</span>
+                  </ActivityLeft>
+                  <ActivityTime>13:53 PM</ActivityTime>
+                </ActivityItem>
+                <ActivityItem>
+                  <ActivityLeft>
+                    <FontAwesomeIcon icon={faInfoCircle} style={{color: '#3182ce'}} />
+                    <span>Config Updated</span>
+                  </ActivityLeft>
+                  <ActivityTime>13:53 PM</ActivityTime>
+                </ActivityItem>
+              </ActivityList>
+            </LightCard>
+
+          </SidebarLogs>
+        </ContentLayout>
+
+      </MainGrid>
+
+      {/* زر المساعدة العائم أسفل اليسار */}
+      <FloatingHelp>
+        <FontAwesomeIcon icon={faQuestionCircle} style={{fontSize: '1.2rem'}} />
+      </FloatingHelp>
+    </Container>
+  );
 }
-
-export default Dashboard;
