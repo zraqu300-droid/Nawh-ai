@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   TrendingUp, 
   Database, 
@@ -13,10 +13,11 @@ import {
   AlertCircle,
   HelpCircle,
   Sparkles,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Trash2
 } from 'lucide-react';
 
-// استيراد ملف الخدمة المسؤول عن حفظ البيانات والـ API من المسار المحدد
+// استيراد ملف الخدمة الصحيح والمطابق للدوال المبرمجة
 import apiService from '../services/apiService';
 
 export default function Dashboard() {
@@ -28,12 +29,36 @@ export default function Dashboard() {
   const [description, setDescription] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   
+  // قائمة المنشورات المخزنة لعرضها في خانة الحذف
+  const [posts, setPosts] = useState([]);
+  const [isFetching, setIsFetching] = useState(false);
+
   // حالات النظام (System Status UI)
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
   const fileInputRef = useRef(null);
+
+  // دالة جلب المنشورات تحديثاً للوحة والجدول
+  const fetchAllPosts = async () => {
+    setIsFetching(true);
+    try {
+      const response = await apiService.getDynamicDataService();
+      if (response && response.success) {
+        setPosts(response.data || []);
+      }
+    } catch (err) {
+      console.error("خطأ أثناء جلب المنشورات للجدول:", err);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  // جلب البيانات عند تحميل الصفحة لأول مرة
+  useEffect(() => {
+    fetchAllPosts();
+  }, []);
 
   // دالة التعامل مع اختيار ملف من الجهاز
   const handleFileChange = (e) => {
@@ -49,40 +74,30 @@ export default function Dashboard() {
     setErrorMessage('');
     setIsSuccess(false);
 
-    // تجميع البيانات اعتماداً على نوع المحتوى المختار
-    // إذا كان يحتوي على ملفات حقيقية نستخدم FormData، وإلا نرسل كائن JSON عادي
     try {
-      let payload;
+      // ضبط الـ payload بدقة ليتوافق مع الحقول النصية لجدول الـ posts في Neon
+      const payload = {
+        type: activeType,
+        title: title,
+        url: url || null,
+        description: description || null,
+        file_path: selectedFile ? selectedFile.name : null // محاكاة مسار الملف نصياً
+      };
 
-      if (selectedFile) {
-        payload = new FormData();
-        payload.append('type', activeType);
-        payload.append('title', title);
-        payload.append('description', description);
-        payload.append('url', url);
-        payload.append('file', selectedFile);
-      } else {
-        payload = {
-          type: activeType,
-          title: title,
-          url: url,
-          description: description
-        };
-      }
-
-      // تمرير البيانات مباشرة لملف الخدمة المسؤول عن الحفظ
-      // ملاحظة: تم افتراض اسم الدالة داخل الـ apiService كـ 'saveContent' أو 'uploadData'
-      // يمكنك تعديل اسم الدالة المستدعاة بحسب ما هو مكتوب داخل ملف الـ apiService لديك
-      const response = await apiService.saveContent(payload); 
+      // استدعاء الدالة الحقيقية والمطابقة لملف apiService المحدث
+      const response = await apiService.saveDynamicDataService(payload); 
       
-      // في حال نجاح العملية
-      setIsSuccess(true);
-      // تصفير الاستمارة بعد الحفظ الناجح
-      setTitle('');
-      setUrl('');
-      setDescription('');
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (response.success) {
+        setIsSuccess(true);
+        setTitle('');
+        setUrl('');
+        setDescription('');
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        // تحديث جدول الحذف فوراً بعد الإضافة الناجحة
+        fetchAllPosts();
+      }
 
     } catch (error) {
       console.error("Error saving dynamic content:", error);
@@ -92,7 +107,23 @@ export default function Dashboard() {
     }
   };
 
-  // كائنات الستايل المدمجة الأصلية دون تغيير في الهوية البصرية لضمان ثبات التصميم
+  // دالة التعامل مع حذف عنصر محدد من الجدول
+  const handleDelete = async (id) => {
+    if (!window.confirm('هل أنت متأكد من رغبتك في حذف هذا المنشور نهائياً؟')) return;
+
+    try {
+      const response = await apiService.deleteDynamicDataService(id);
+      if (response.success) {
+        alert('تم حذف السجل بنجاح.');
+        fetchAllPosts(); // إعادة جلب البيانات لتحديث الجدول
+      }
+    } catch (error) {
+      console.error("Error deleting content:", error);
+      alert('فشل حذف المنشور: ' + error.message);
+    }
+  };
+
+  // كائنات الستايل المدمجة الأصلية متضمنة إضافات قسم الحذف الهيكلي الجديد
   const styles = {
     container: {
       direction: 'rtl',
@@ -102,7 +133,7 @@ export default function Dashboard() {
       padding: '24px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       position: 'relative',
-      overflow: 'hidden',
+      overflowX: 'hidden',
       boxSizing: 'border-box'
     },
     glowTop: {
@@ -315,6 +346,32 @@ export default function Dashboard() {
       flexDirection: 'column',
       justifyContent: 'space-between',
       flex: 1
+    },
+    // ستايل لوحة التحكم الجديدة المخصصة للحذف والتعديل المباشر
+    managementSection: {
+      backgroundColor: '#161b26',
+      border: '1px solid #222938',
+      borderRadius: '16px',
+      padding: '20px',
+      marginTop: '12px'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      marginTop: '12px',
+      fontSize: '13px',
+      textAlign: 'right'
+    },
+    th: {
+      borderBottom: '2px solid #222938',
+      padding: '12px 8px',
+      color: '#a0aec0',
+      fontWeight: '600'
+    },
+    td: {
+      borderBottom: '1px solid #222938',
+      padding: '12px 8px',
+      color: '#ffffff'
     }
   };
 
@@ -437,8 +494,6 @@ export default function Dashboard() {
 
               {/* حقول المدخلات الذكية والمتغيرة حسب اختيار الـ Tab */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                
-                {/* حقل العنوان يظهر لجميع الحالات باستثناء الروابط المباشرة السريعة في حال رغبت بذلك */}
                 <input 
                   type="text" 
                   placeholder={activeType === 'Files' ? "اكتب اسم الملف أو عنوان المرفق..." : "اكتب عنوان المحتوى أو المقالة هنا..."} 
@@ -448,7 +503,6 @@ export default function Dashboard() {
                   required
                 />
                 
-                {/* حقل رفع الملفات الحقيقي للجهاز يظهر عند اختيار Files أو Image أو Video أو Mixed */}
                 {activeType !== 'URL' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>رفع ملف حقيقي من الجهاز (اختياري):</label>
@@ -462,7 +516,6 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* حقل الروابط المباشرة (URL) يظهر دائماً أو عند اختيار تبويب الروابط والمقالات المركبة */}
                 {(activeType === 'URL' || activeType === 'Image' || activeType === 'Video' || activeType === 'Mixed') && (
                   <input 
                     type="url" 
@@ -473,7 +526,6 @@ export default function Dashboard() {
                   />
                 )}
 
-                {/* حقل النص الطويل أو المقالة المستقلة */}
                 <textarea 
                   rows="3" 
                   placeholder="اكتب تفاصيل الموضوع، المقال، أو الوصف السردي هنا..." 
@@ -483,14 +535,7 @@ export default function Dashboard() {
                 ></textarea>
               </div>
 
-              {/* النقاط السفلية (Pagination Dots) */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', padding: '4px 0' }}>
-                <span style={{ width: '24px', height: '6px', borderRadius: '999px', backgroundColor: '#4a5568' }}></span>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#cbd5e0' }}></span>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#cbd5e0' }}></span>
-              </div>
-
-              {/* شريط رسالة النجاح الحقيقية */}
+              {/* شريط رسالة النجاح */}
               {isSuccess && (
                 <div style={styles.successBox}>
                   <span style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => setIsSuccess(false)}>✕</span>
@@ -501,7 +546,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* شريط رسالة الخطأ في حال حدوث عطل في الـ API */}
+              {/* شريط رسالة الخطأ */}
               {errorMessage && (
                 <div style={styles.errorBox}>
                   <span style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => setErrorMessage('')}>✕</span>
@@ -520,8 +565,6 @@ export default function Dashboard() {
 
           {/* اليسار: كروت الإجراءات والنشاطات الأخيرة المدمجة بالكامل */}
           <div style={styles.leftSection}>
-            
-            {/* كارت العمليات السريعة */}
             <div style={styles.lightCard}>
               <div style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px' }}>
                 <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#718096', display: 'block', textTransform: 'uppercase' }}>Quick Actions</span>
@@ -536,14 +579,13 @@ export default function Dashboard() {
                   <Upload style={{ width: '16px', height: '16px' }} />
                   Upload File Direct
                 </button>
-                <button type="button" style={{ width: '100%', backgroundColor: '#edf2f7', border: '1px solid #cbd5e0', color: '#4a5568', fontWeight: '600', padding: '12px', borderRadius: '12px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <button type="button" onClick={fetchAllPosts} style={{ width: '100%', backgroundColor: '#edf2f7', border: '1px solid #cbd5e0', color: '#4a5568', fontWeight: '600', padding: '12px', borderRadius: '12px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <RefreshCw style={{ width: '16px', height: '16px' }} />
                   Refresh Server
                 </button>
               </div>
             </div>
 
-            {/* كارت الأنشطة الأخيرة */}
             <div style={styles.lightCard}>
               <div style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px' }}>
                 <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#718096', display: 'block', textTransform: 'uppercase' }}>Recent Activity</span>
@@ -566,16 +608,57 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
-      </div>
 
-      {/* زر المساعدة العائم */}
-      <div style={{ position: 'fixed', bottom: '20px', left: '20px', zIndex: 50 }}>
-        <button type="button" style={{ width: '40px', height: '40px', backgroundColor: '#161b26', border: '1px solid #222938', color: '#a0aec0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
-          <HelpCircle style={{ width: '20px', height: '20px' }} />
-        </button>
+        {/* القسم المضاف حديثاً: خانة وجدول إدارة وحذف المنشورات المتصل بقاعدة البيانات */}
+        <div style={styles.managementSection}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', borderBottom: '1px solid #222938', paddingBottom: '8px' }}>
+            <Trash2 style={{ width: '18px', height: '18px', color: '#e53e3e' }} />
+            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>لوحة التحكم وإلغاء نشر العناصر (حذف البيانات حياً)</h2>
+          </div>
+
+          {isFetching ? (
+            <p style={{ color: '#a0aec0', fontSize: '13px' }}>جاري تحديث قائمة البيانات الحالية...</p>
+          ) : posts.length === 0 ? (
+            <p style={{ color: '#a0aec0', fontSize: '13px' }}>لا توجد منشورات متاحة حالياً داخل قاعدة البيانات.</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>المعرف (ID)</th>
+                    <th style={styles.th}>النوع</th>
+                    <th style={styles.th}>العنوان الرئيسي</th>
+                    <th style={styles.th}>الوصف والمحتوى</th>
+                    <th style={styles.th} style={{ textAlign: 'center' }}>إجراءات الإزالة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {posts.map((post) => (
+                    <tr key={post.id}>
+                      <td style={styles.td} style={{ fontFamily: 'monospace', color: '#a0aec0' }}>{post.id}</td>
+                      <td style={styles.td}><span style={{ backgroundColor: '#2d3748', padding: '4px 8px', borderRadius: '6px', fontSize: '11px' }}>{post.type}</span></td>
+                      <td style={styles.td} style={{ fontWeight: '600' }}>{post.title}</td>
+                      <td style={styles.td}>{post.description ? post.description.substring(0, 50) + '...' : '---'}</td>
+                      <td style={styles.td} style={{ textAlign: 'center' }}>
+                        <button 
+                          type="button"
+                          onClick={() => handleDelete(post.id)}
+                          style={{ backgroundColor: 'transparent', border: 'none', color: '#e53e3e', cursor: 'pointer', transition: 'color 0.2s' }}
+                          title="حذف نهائي"
+                        >
+                          <Trash2 style={{ width: '18px', height: '18px' }} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
