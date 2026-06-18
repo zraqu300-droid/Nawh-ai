@@ -29,7 +29,14 @@ export default async function handler(request, response) {
             });
         }
 
-        // تنفيذ استعلام الإدخال داخل جدول posts المتوافق مع حقول الـ SQL بدقة
+        // تحضير المتغيرات لضمان معالجتها كـ نصوص أو تركها فارغة بشكل سليم يقبله محرك نيون
+        const postType = String(type);
+        const postTitle = String(title);
+        const postUrl = url ? String(url) : null;
+        const postDesc = description ? String(description) : null;
+        const postFile = file_path ? String(file_path) : null;
+
+        // تنفيذ استعلام الإدخال السليم والمباشر دون صياغة شروط داخل القالب الزمني
         const result = await sql`
             INSERT INTO posts (
                 type, 
@@ -38,18 +45,18 @@ export default async function handler(request, response) {
                 description, 
                 file_path
             ) VALUES (
-                ${String(type)}, 
-                ${String(title)}, 
-                ${url ? String(url) : null}, 
-                ${description ? String(description) : null}, 
-                ${file_path ? String(file_path) : null}
+                ${postType}, 
+                ${postTitle}, 
+                ${postUrl}, 
+                ${postDesc}, 
+                ${postFile}
             ) RETURNING id;
         `;
 
         // إرجاع استجابة النجاح مع المعرف الفريد للمنشور الجديد
         return response.status(200).json({ 
             success: true, 
-            message: "تم حفظ وبيانات المنشور بنجاح داخل نيون نيو"،
+            message: "تم حفظ بيانات المنشور بنجاح داخل نيون نيو",
             inserted_id: result[0].id
         });
 
