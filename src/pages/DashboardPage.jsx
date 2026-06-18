@@ -5,13 +5,14 @@
  * Features:
  * - Time-based greeting (Good morning/afternoon/evening)
  * - Animated statistics cards
+ * - Dynamic data hydration from src/services/apiService.js (Articles, Images, Clusters)
  * - Quick actions
- * - Recent activity feed
+ * - Recent activity feed dynamically mapped
  * - RTL/LTR responsive layouts
  * - Dark mode support
  *
  * @author nawh.ai
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import { useState, useEffect } from 'react';
@@ -29,12 +30,17 @@ import {
   Zap,
   Calendar,
   Clock,
+  Image as ImageIcon,
+  FileText
 } from 'lucide-react';
 import { useLanguage } from '../context/ThemeLanguageContext.jsx';
 import { Card } from '../components/Card.jsx';
 import Button from '../components/Button.jsx';
 import Navbar from '../components/Navbar.jsx';
 import Sidebar from '../components/Sidebar.jsx';
+
+// استيراد كود خدمة الاتصال الخارجي الموحد بقاعدة البيانات
+import apiService from '../services/apiService.js';
 
 /**
  * Animated Counter Component
@@ -130,8 +136,13 @@ function ActivityItem({ icon: Icon, title, time, description }) {
 function DashboardPage() {
   const { language, isRTL } = useLanguage();
   const [greeting, setGreeting] = useState('');
+  
+  // حالات تخزين البيانات القادمة من قاعدة البيانات عبر الـ API
+  const [dynamicArticles, setDynamicArticles] = useState([]);
+  const [dynamicStats, setDynamicStats] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Get time-based greeting
+  // جلب الترحيب الزمني التلقائي
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
@@ -145,11 +156,37 @@ function DashboardPage() {
     }
   }, [language]);
 
-  // Stats data
+  // استدعاء البيانات الحية فور تحميل الصفحة
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        // 1. جلب المقالات والوسائط من قاعدة البيانات
+        const contentResponse = await apiService.get('/v1/dashboard/content');
+        if (contentResponse && contentResponse.data) {
+          setDynamicArticles(contentResponse.data.articles || []);
+        }
+
+        // 2. جلب الإحصائيات الحية التراكمية المحدثة
+        const statsResponse = await apiService.get('/v1/dashboard/stats');
+        if (statsResponse && statsResponse.data) {
+          setDynamicStats(statsResponse.data);
+        }
+      } catch (error) {
+        console.error("Error hydrating dashboard data from apiService:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
+
+  // المخطط الأساسي للإحصائيات مع دمج القيم القادمة من السيرفر إن وجدت
   const stats = [
     {
       title: language === 'ar' ? 'إجمالي المستخدمين' : 'Total Users',
-      value: 12847,
+      value: dynamicStats?.totalUsers || 12847,
       icon: Users,
       change: 12.5,
       isPositive: true,
@@ -157,7 +194,7 @@ function DashboardPage() {
     },
     {
       title: language === 'ar' ? 'المشاريع النشطة' : 'Active Projects',
-      value: 483,
+      value: dynamicStats?.activeProjects || 483,
       icon: FolderKanban,
       change: 8.2,
       isPositive: true,
@@ -165,7 +202,7 @@ function DashboardPage() {
     },
     {
       title: language === 'ar' ? 'تفاعلات الذكاء' : 'AI Interactions',
-      value: 54629,
+      value: dynamicStats?.aiInteractions || 54629,
       icon: Bot,
       change: 24.3,
       isPositive: true,
@@ -173,7 +210,7 @@ function DashboardPage() {
     },
     {
       title: language === 'ar' ? 'نسبة النجاح' : 'Success Rate',
-      value: 98,
+      value: dynamicStats?.successRate || 98,
       icon: TrendingUp,
       change: 2.1,
       isPositive: true,
@@ -181,33 +218,34 @@ function DashboardPage() {
     },
   ];
 
-  // Recent activity
-  const activities = [
-    {
-      icon: Bot,
-      title: language === 'ar' ? 'طلب ذكاء اصطناعي جديد' : 'New AI Request',
-      description: language === 'ar' ? 'تم معالجة طلب إنشاء نص' : 'Text generation request processed',
-      time: language === 'ar' ? 'منذ 5 دقائق' : '5 mins ago',
-    },
-    {
-      icon: Users,
-      title: language === 'ar' ? 'مستخدم جديد' : 'New User',
-      description: language === 'ar' ? 'انضم أحمد للمنصة' : 'Ahmed joined the platform',
-      time: language === 'ar' ? 'منذ 15 دقيقة' : '15 mins ago',
-    },
-    {
-      icon: Activity,
-      title: language === 'ar' ? 'تحديث النظام' : 'System Update',
-      description: language === 'ar' ? 'تم تحسين الأداء بنسبة 15%' : 'Performance improved by 15%',
-      time: language === 'ar' ? 'منذ ساعة' : '1 hour ago',
-    },
-    {
-      icon: FolderKanban,
-      title: language === 'ar' ? 'مشروع مكتمل' : 'Project Completed',
-      description: language === 'ar' ? 'تطبيق التجارة الإلكترونية' : 'E-commerce application',
-      time: language === 'ar' ? 'منذ 3 ساعات' : '3 hours ago',
-    },
-  ];
+  // الأنشطة الأخيرة - تدمج المقالات الحية المحملة من الـ API بشكل فخم داخل الـ Feed
+  const activities = dynamicArticles.length > 0 
+    ? dynamicArticles.map((article) => ({
+        icon: article.type === 'image' ? ImageIcon : FileText,
+        title: article.title,
+        description: article.summary || article.description,
+        time: article.timeAgo || (language === 'ar' ? 'مؤخراً' : 'Recent'),
+      }))
+    : [
+        {
+          icon: Bot,
+          title: language === 'ar' ? 'طلب ذكاء اصطناعي جديد' : 'New AI Request',
+          description: language === 'ar' ? 'تم معالجة طلب إنشاء نص' : 'Text generation request processed',
+          time: language === 'ar' ? 'منذ 5 دقائق' : '5 mins ago',
+        },
+        {
+          icon: Users,
+          title: language === 'ar' ? 'مستخدم جديد' : 'New User',
+          description: language === 'ar' ? 'انضم أحمد للمنصة' : 'Ahmed joined the platform',
+          time: language === 'ar' ? 'منذ 15 دقيقة' : '15 mins ago',
+        },
+        {
+          icon: Activity,
+          title: language === 'ar' ? 'تحديث النظام' : 'System Update',
+          description: language === 'ar' ? 'تم تحسين الأداء بنسبة 15%' : 'Performance improved by 15%',
+          time: language === 'ar' ? 'منذ ساعة' : '1 hour ago',
+        },
+      ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -237,8 +275,8 @@ function DashboardPage() {
 
                 <p className="text-gray-600 dark:text-gray-400 mt-4 max-w-md">
                   {language === 'ar'
-                    ? 'استكشف أحدث إحصائياتك وتفاعل مع أدوات الذكاء الاصطناعي المتطورة'
-                    : 'Explore your latest stats and interact with advanced AI tools'}
+                    ? 'استكشف أحدث إحصائياتك وتفاعل مع أدوات الذكاء الاصطناعي المتطورة المستخرجة من خوادمك السحابية.'
+                    : 'Explore your latest stats and interact with advanced AI tools synced directly with your cloud cluster.'}
                 </p>
 
                 <Link to="/ai-playground">
@@ -273,12 +311,12 @@ function DashboardPage() {
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Activity */}
+            {/* Recent Activity Layer dynamically injected */}
             <Card className="lg:col-span-2">
               <div className="p-6 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {language === 'ar' ? 'النشاط الأخير' : 'Recent Activity'}
+                    {language === 'ar' ? 'المحتوى والأنشطة الحية' : 'Live Content & Feed'}
                   </h2>
                   <button className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline">
                     {language === 'ar' ? 'عرض الكل' : 'View All'}
