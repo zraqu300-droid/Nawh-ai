@@ -1,33 +1,42 @@
-import { useEffect } from 'react';
+// api/chat/route.js
 
-export default function ChatbotScript() {
-  useEffect(() => {
-    // التأكد من أن المتغيرات موجودة قبل تشغيل السكريبت
-    const chatbotId = process.env.NEXT_PUBLIC_CHATBOT_ID;
-    const chatbaseHost = process.env.NEXT_PUBLIC_CHATBASE_HOST || "https://www.chatbase.co";
+export async function GET(request) {
+  // 1. قراءة متغيرات البيئة من سيرفر Vercel
+  const chatbotId = process.env.NEXT_PUBLIC_CHATBOT_ID;
+  const chatbaseHost = process.env.NEXT_PUBLIC_CHATBASE_HOST || "https://www.chatbase.co";
 
-    if (!chatbotId) {
-      console.error("Chatbot ID is missing! Please check your environment variables.");
-      return;
-    }
-
-    // إنشاء عنصر السكريبت لتضمين الشات
-    const script = document.createElement('script');
-    script.src = `${chatbaseHost}/embed.min.js`;
-    script.setAttribute('chatbotId', chatbotId);
-    script.setAttribute('domain', new URL(chatbaseHost).hostname);
-    script.defer = true;
-
-    // إضافة السكريبت إلى جسم الصفحة (body)
-    document.body.appendChild(script);
-
-    // تنظيف السكريبت عند إغلاق المكون من الصفحة لمنع التكرار
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
+  // 2. التحقق من وجود المعرف (ID) لمنع الأخطاء
+  if (!chatbotId) {
+    return new Response(
+      JSON.stringify({ error: "خطأ: المعرف NEXT_PUBLIC_CHATBOT_ID غير مضاف في إعدادات Vercel" }), 
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json; charset=utf-8" }
       }
-    };
-  }, []);
+    );
+  }
 
-  return null; // هذا المكون لا يحتاج لعرض أي عناصر HTML لأنه يضيف الشات في الخلفية
+  // 3. نص كود الجافا سكريبت الذي سيتم تشغيله داخل المتصفح (Client) لإنشاء الشات
+  const scriptCode = `
+    (function() {
+      if (!document.getElementById("chatbase-chatbot-script")) {
+        const script = document.createElement("script");
+        script.id = "chatbase-chatbot-script";
+        script.src = "${chatbaseHost}/embed.min.js";
+        script.setAttribute("chatbotId", "${chatbotId}");
+        script.setAttribute("domain", "${new URL(chatbaseHost).hostname}");
+        script.defer = true;
+        document.body.appendChild(script);
+      }
+    })();
+  `;
+
+  // 4. إرسال الكود كملف جافا سكريبت تنفيذي (application/javascript)
+  return new Response(scriptCode, {
+    status: 200,
+    headers: { 
+      "Content-Type": "application/javascript; charset=utf-8",
+      "Cache-Control": "no-store, max-age=0" // لضمان عدم كاش السكريبت عند تغيير الإعدادات
+    }
+  });
 }
