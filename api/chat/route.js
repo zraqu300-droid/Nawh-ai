@@ -1,14 +1,7 @@
 import { neon } from '@neondatabase/serverless';
-import OpenAI from 'openai';
 
 // ربط قاعدة بيانات Neon
 const sql = neon(process.env.DATABASE_URL);
-
-// ربط OpenRouter
-const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENAI_API_KEY, 
-});
 
 // الدالة الأساسية التي يستدعيها Vercel تلقائياً عند طلب الرابط
 export default async function handler(request, response) {
@@ -20,15 +13,26 @@ export default async function handler(request, response) {
   try {
     const { message, userId } = request.body;
 
-    // 1. طلب الرد من الذكاء الاصطناعي
-    const aiResponse = await openai.chat.completions.create({
-      model: 'meta-llama/llama-3-8b-instruct:free',
-      messages: [
-        { role: 'user', content: message }
-      ],
+    // 1. طلب الرد من الذكاء الاصطناعي عبر fetch المدمجة بدون أي مكتبات خارجيّة
+    const openRouterResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "meta-llama/llama-3-8b-instruct:free", // الموديل المجاني من OpenRouter
+        messages: [
+          { role: "user", content: message }
+        ]
+      })
     });
 
-    const replyText = aiResponse.choices[0].message.content;
+    // تحويل استجابة الذكاء الاصطناعي إلى JSON
+    const aiData = await openRouterResponse.json();
+    
+    // استخراج نص الرد
+    const replyText = aiData.choices[0].message.content;
 
     // 2. حفظ في قاعدة البيانات إذا أرسلت الـ userId
     if (userId) {
@@ -38,11 +42,11 @@ export default async function handler(request, response) {
       `;
     }
 
-    // 3. إرجاع النتيجة
+    // 3. إرجاع النتيجة الحصريّة للفرونت إند
     return response.status(200).json({ reply: replyText });
 
   } catch (error) {
     console.error('Error:', error);
-    return response.status(500).json({ error: 'حدث خطأ في السيرفر' });
+    return response.status(500).json({ error: 'حدث خطأ في السيرفر الداخلي' });
   }
 }
