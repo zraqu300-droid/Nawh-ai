@@ -1,57 +1,33 @@
-// الدالة الأساسية التي يستدعيها Vercel تلقائياً عند طلب الرابط (شات فقط)
-export default async function handler(request, response) {
-  // السماح بطلبات POST فقط
-  if (request.method !== 'POST') {
-    return response.status(405).json({ error: 'Method Not Allowed' });
-  }
+import { useEffect } from 'react';
 
-  try {
-    const { message } = request.body;
+export default function ChatbotScript() {
+  useEffect(() => {
+    // التأكد من أن المتغيرات موجودة قبل تشغيل السكريبت
+    const chatbotId = process.env.NEXT_PUBLIC_CHATBOT_ID;
+    const chatbaseHost = process.env.NEXT_PUBLIC_CHATBASE_HOST || "https://www.chatbase.co";
 
-    // التحقق من وصول الرسالة لتفادي قراءة قيم فارغة
-    if (!message) {
-      return response.status(400).json({ error: 'Message payload is required' });
+    if (!chatbotId) {
+      console.error("Chatbot ID is missing! Please check your environment variables.");
+      return;
     }
 
-    // 1. طلب الرد من الذكاء الاصطناعي عبر fetch المدمجة
-    const openRouterResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-3-8b-instruct:free", // الموديل المجاني من OpenRouter
-        messages: [
-          { role: "user", content: message }
-        ]
-      })
-    });
+    // إنشاء عنصر السكريبت لتضمين الشات
+    const script = document.createElement('script');
+    script.src = `${chatbaseHost}/embed.min.js`;
+    script.setAttribute('chatbotId', chatbotId);
+    script.setAttribute('domain', new URL(chatbaseHost).hostname);
+    script.defer = true;
 
-    // تحويل استجابة الذكاء الاصطناعي إلى JSON
-    const aiData = await openRouterResponse.json();
-    
-    // طباعة الاستجابة في السجلات للمراقبة السريعة والتصحيح
-    console.log('OpenRouter API Raw Response:', JSON.stringify(aiData));
+    // إضافة السكريبت إلى جسم الصفحة (body)
+    document.body.appendChild(script);
 
-    // استخراج نص الرد بشكل آمن تماماً يمنع انهيار السيرفر (Safe Reading)
-    const replyText = aiData?.choices?.[0]?.message?.content;
+    // تنظيف السكريبت عند إغلاق المكون من الصفحة لمنع التكرار
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
-    // التحقق مما إذا كان الرد فارغاً أو أن OpenRouter أرجع خطأ في البنية
-    if (!replyText) {
-      const apiErrorMessage = aiData?.error?.message || "Llama model is currently unreachable or API Key invalid.";
-      console.error('OpenRouter failed to reply:', apiErrorMessage);
-      return response.status(502).json({ 
-        error: 'فشل مزود الذكاء الاصطناعي في الاستجابة',
-        details: apiErrorMessage 
-      });
-    }
-
-    // 2. إرجاع النتيجة الحصريّة والمستقرة للفرونت إند مباشرة
-    return response.status(200).json({ reply: replyText });
-
-  } catch (error) {
-    console.error('Fatal Route Error:', error);
-    return response.status(500).json({ error: 'حدث خطأ في السيرفر الداخلي أثناء معالجة الطلب' });
-  }
+  return null; // هذا المكون لا يحتاج لعرض أي عناصر HTML لأنه يضيف الشات في الخلفية
 }
